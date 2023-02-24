@@ -82,11 +82,14 @@ bool ray_sphere_intersection(
 
 	vec2 solutions; // solutions will be stored here
 
+	// TODO: find a,b,c and solve quadratic equation
 	int num_solutions = solve_quadratic(
 		// A: t^2 * ||d||^2 = dot(ray_direction, ray_direction) but ray_direction is normalized
-		1., 
+		//1., 
+		dot(ray_direction, ray_direction), // A (dot product of a normalized vector with itself is 1)
 		// B: t * (2d dot (o - c))
-		2. * dot(ray_direction, oc),	
+		//2. * dot(ray_direction, oc),	
+		* dot(ray_direction,oc),
 		// C: ||o-c||^2 - r^2				
 		dot(oc, oc) - sphere_radius*sphere_radius,
 		// where to store solutions
