@@ -191,7 +191,7 @@ bool ray_plane_intersection(
 
         t = (plane_offset - dot(plane_normal, ray_origin)) / dot(plane_normal, ray_direction);
 
-	normal = (dot(plane_normal, ray_direction)<0.?-1.:1.)*plane_normal;
+	normal = (dot(plane_normal, ray_direction)<0.?1.:-1.)*plane_normal;
         
 	return t > 0.;
 }
