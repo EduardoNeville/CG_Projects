@@ -1,20 +1,28 @@
-
 import {createREGL} from "../lib/regljs_2.1.0/regl.module.js"
 import {setMatrixArrayType} from "../lib/gl-matrix_3.3.0/esm/common.js"
 import {DOM_loaded_promise, register_button_with_hotkey} from "./icg_web.js"
 
 import {Raytracer} from "./raytracer_pipeline.js"
+import {load_scenes} from "./scenes.js"
+
+import {init_menu} from "./menu.js"
 
 setMatrixArrayType(Array);
 
 function init_dom_elems(elem_canvas, on_resize_func) {
+	const elem_body = document.getElementsByTagName('body')[0]
+
 	// Resize canvas to fit the window, but keep it square.
 	function resize_canvas() {
 		const s = Math.min(window.innerHeight, window.innerWidth) - 10
 		elem_canvas.width = s
 		elem_canvas.height = s
-		//elem_canvas.width = window.innerWidth
-		//elem_canvas.height = window.innerHeight
+
+		if(window.innerHeight < window.innerWidth) {
+			elem_body.style['flex-flow'] = 'row'
+		} else {
+			elem_body.style['flex-flow'] = 'column'
+		}
 	}
 	window.addEventListener('resize', () => {
 		resize_canvas()
@@ -33,31 +41,28 @@ async function main() {
 		canvas: elem_canvas,
 		profile: true, // if we want to measure the size of buffers/textures in memory
 		extensions: [
+			'OES_texture_float',
 		], 
 	})
 	console.log('MAX_VERTEX_UNIFORM_VECTORS', regl._gl.MAX_VERTEX_UNIFORM_VECTORS)
 
-	// Run ray-tracing
+	const {SCENES} = await load_scenes()
+
+	// Init ray-tracing
 	const rt = new Raytracer({
 		resolution: [640, 640],
+		scenes: SCENES,
 	})
-	
 	await rt.init(regl)
-	await rt.draw_scene('basic-sphere')
-
-	// Show output buffer
-	function regenerate_view() {
-		regl.poll()
-		rt.pipeline_show()
-	}
-	init_dom_elems(elem_canvas, () => requestAnimationFrame(regenerate_view))
-	regenerate_view()
+	
+	init_dom_elems(elem_canvas, () => rt.regenerate_view())
 
 	// Saving the image
 	register_button_with_hotkey('btn-screenshot', 's', () => {
-		// put breakpoint here then press S
 		rt.save_image()
 	})
+
+	init_menu(rt, 'creature')
 }
 
 async function entrypoint() {
