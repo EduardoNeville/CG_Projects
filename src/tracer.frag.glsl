@@ -350,14 +350,14 @@ vec3 lighting(
 	You can use existing methods for `vec3` objects such as `mirror`, `reflect`, `norm`, `dot`, and `normalize`.
 	*/
 
-	
 	vec3 light_dir = normalize(light.position - object_point);
 
 	vec3 dot_n_l = dot(normalize(object_normal), light_dir); 
 	if (dot_n_l < 0.) {return 0;} 
 
 	vec3 mat_diffuse = mat.color * mat.diffuse; 
-	vec3 diffuse_intensity = light.color * mat_diffuse * dot_n_l; 
+	vec3 diffuse_intensity = light.color * mat_diffuse * dot_n_l;
+
 
 	/** #TODO RT2.2: 
 	- shoot a shadow ray from the intersection point to the light
