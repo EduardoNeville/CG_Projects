@@ -359,19 +359,28 @@ vec3 lighting(
 	vec3 mat_d_dot = mat_diffuse * dot_n_l;
 	
 
-	vec3 reflected_light = normalize(reflect(-light_dir, object_normal));
 
-	float dot_r_v = dot(reflected_light,direction_to_camera);
 	vec3 mat_specular = mat.color * mat.specular;
-	vec3 mat_s_dot = mat_specular * pow(dot_r_v, mat.shininess);
+
 	
 	/**
 	 * Used in Blinn-Phong
-	vec3 half_vec = normalize(direction_to_camera, object_normal));
-	
-	float dot_h_n = dot(half_vec, object_normal);
 	*/
  
+	float spec_dot = 0.;
+	vec3 reflected_light = normalize(reflect(-light_dir, object_normal));
+
+	#if SHADING_MODE == SHADING_MODE_PHONG
+		spec_dot = dot(reflected_light,direction_to_camera);
+	#endif
+	vec3 half_vec = (direction_to_camera - light_dir) / length(direction_to_camera -light_dir);
+
+	#if SHADING_MODE == SHADING_MODE_BLINN_PHONG
+		spec_dot = dot(half_vec, object_normal);
+	#endif
+
+	vec3 mat_s_dot = mat_specular * pow(spec_dot, mat.shininess);
+
 	if (dot_n_l < 0.) {
 		mat_d_dot = vec3(0.);
 	} 
@@ -397,11 +406,6 @@ vec3 lighting(
         }
 
 
-	#if SHADING_MODE == SHADING_MODE_PHONG
-	#endif
-
-	#if SHADING_MODE == SHADING_MODE_BLINN_PHONG
-	#endif
 
 	return diffuse_specular_intensity;
 }
