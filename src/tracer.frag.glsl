@@ -220,7 +220,7 @@ bool ray_cylinder_intersection(
 
 	if (num_solutions >= 1 && solutions[0] > 0.) {
                 vec3 intersection_point = ray_origin + ray_direction * solutions[0];
-                if (abs(dot(cyl.axis, intersection_point - cyl.center)) <= cyl.height) {
+                if (abs(dot(cyl.axis, intersection_point - cyl.center)) <= cyl.height * 0.5) {
                         t = solutions[0];
                 }
                 
@@ -228,7 +228,7 @@ bool ray_cylinder_intersection(
         
 	if (num_solutions >= 2 && solutions[1] > 0. && solutions[1] < t) {
 	        vec3 intersection_point = ray_origin + ray_direction * solutions[1];
-                if (abs(dot(cyl.axis, intersection_point - cyl.center)) <= cyl.height) {
+                if (abs(dot(cyl.axis, intersection_point - cyl.center)) <= cyl.height * 0.5) {
                         t = solutions[1];
                         if (solutions[0] < solutions[1]) {
                                 second_face = true;
