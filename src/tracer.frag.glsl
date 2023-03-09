@@ -352,14 +352,33 @@ vec3 lighting(
 
 	vec3 light_dir = normalize(light.position - object_point);
 
+	// Diffuse 
 	float dot_n_l = dot(normalize(object_normal), light_dir); 
 	if (dot_n_l < 0.) {
 		return vec3(0.);
 	} 
 
 	vec3 mat_diffuse = mat.color * mat.diffuse; 
-	vec3 diffuse_intensity = light.color * mat_diffuse * dot_n_l;
+	vec3 mat_d_dot = mat_diffuse * dot_n_l;
+	
 
+	vec3 reflected_light = normalize(reflect(-light_dir, object_normal));
+	if (dot(reflected_light,direction_to_camera) < 0.){
+		return vec3(0.);
+	}
+
+	float dot_r_v = dot(reflected_light,direction_to_camera);
+	vec3 mat_specular = mat.color * mat.specular;
+	vec3 mat_s_dot = mat_specular * pow(dot_r_v, mat.shininess);
+	
+	/**
+	 * Used in Blinn-Phong
+	vec3 half_vec = normalize(direction_to_camera, object_normal));
+	
+	float dot_h_n = dot(half_vec, object_normal);
+	*/
+ 
+	vec3 diffuse_specular_intensity = light.color *  (mat_d_dot + mat_s_dot);
 
 	/** #TODO RT2.2: 
 	- shoot a shadow ray from the intersection point to the light
@@ -374,7 +393,7 @@ vec3 lighting(
 	#if SHADING_MODE == SHADING_MODE_BLINN_PHONG
 	#endif
 
-	return diffuse_intensity;
+	return diffuse_specular_intensity;
 }
 
 /*
