@@ -220,7 +220,7 @@ bool ray_cylinder_intersection(
 
 	if (num_solutions >= 1 && solutions[0] > 0.) {
                 vec3 intersection_point = ray_origin + ray_direction * solutions[0];
-                if (abs(dot(cyl.axis, intersection_point - cyl.center)) <= cyl.height) {
+                if (abs(dot(cyl.axis, intersection_point - cyl.center)) <= cyl.height * 0.5) {
                         t = solutions[0];
                 }
                 
@@ -228,7 +228,7 @@ bool ray_cylinder_intersection(
         
 	if (num_solutions >= 2 && solutions[1] > 0. && solutions[1] < t) {
 	        vec3 intersection_point = ray_origin + ray_direction * solutions[1];
-                if (abs(dot(cyl.axis, intersection_point - cyl.center)) <= cyl.height) {
+                if (abs(dot(cyl.axis, intersection_point - cyl.center)) <= cyl.height * 0.5) {
                         t = solutions[1];
                         if (solutions[0] < solutions[1]) {
                                 second_face = true;
@@ -243,7 +243,7 @@ bool ray_cylinder_intersection(
                 vec3 ic = intersection_point - cyl.center;
 
                 
-		normal = (ic - dot(cyl.axis, ic)) / cyl.radius;
+		normal = (ic - dot(cyl.axis, ic)*cyl.axis) / cyl.radius;
                 if (second_face) {
                         normal = -normal;
                 }
@@ -385,6 +385,14 @@ vec3 lighting(
 	- check whether it intersects an object from the scene
 	- update the lighting accordingly
 	*/
+
+        vec3 shadow_ray = normalize(light.position - object_point);
+        float col_distance;
+        vec3 col_normal = vec3(0.);
+        int mat_id = 0;
+        if (ray_intersection(object_point+0.01*shadow_ray, shadow_ray, col_distance, col_normal, mat_id)) {
+                return vec3(0.);
+        }
 
 
 	#if SHADING_MODE == SHADING_MODE_PHONG
