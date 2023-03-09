@@ -8,7 +8,7 @@ Task RT1.2.1: Deriving the expressions for a Ray-Cylinder intersection
 
 	Despite this we were able to solve the inequality that followed from equaling the ray equation to the cylinder's implicit equation solving for t gave us a quadratic equation with two, one, or zero values. 
 
-	Two means that the ray traspases the cylinder and intersects in two different locations, in which case the first one will be the intersection as the light from the ray will hit it first. One means that the ray intersects the cylinder only one place and doesn't cross into the cylinder. Zero means there is no intersection.
+	Two means that the ray traspases the cylinder and intersects in two different locations, in which case the first one will be the intersection as the light from the ray will hit it first, as long as the first intersection is within the height of the cylinder. If it isn't but the second intersection is in the height of the cylinder, we hit the cylinder's second face 'from the inside'. One means that the ray intersects the cylinder only one place and doesn't cross into the cylinder. Zero means there is no intersection.
 
 Task RT1.2.2: 
 	In the same fashion as for the ray-plane intersection we first solved the expresion and then found t. In this case given that the solution came in quadratic form we have to evaluate each case separately.
