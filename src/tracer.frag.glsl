@@ -354,18 +354,12 @@ vec3 lighting(
 
 	// Diffuse 
 	float dot_n_l = dot(normalize(object_normal), light_dir); 
-	if (dot_n_l < 0.) {
-		return vec3(0.);
-	} 
 
 	vec3 mat_diffuse = mat.color * mat.diffuse; 
 	vec3 mat_d_dot = mat_diffuse * dot_n_l;
 	
 
 	vec3 reflected_light = normalize(reflect(-light_dir, object_normal));
-	if (dot(reflected_light,direction_to_camera) < 0.){
-		return vec3(0.);
-	}
 
 	float dot_r_v = dot(reflected_light,direction_to_camera);
 	vec3 mat_specular = mat.color * mat.specular;
@@ -378,6 +372,14 @@ vec3 lighting(
 	float dot_h_n = dot(half_vec, object_normal);
 	*/
  
+	if (dot_n_l < 0.) {
+		mat_d_dot = vec3(0.);
+	} 
+
+	if (dot(reflected_light,direction_to_camera) < 0.){
+		mat_s_dot = vec3(0.);
+	}
+
 	vec3 diffuse_specular_intensity = light.color *  (mat_d_dot + mat_s_dot);
 
 	/** #TODO RT2.2: 
