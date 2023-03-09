@@ -352,8 +352,10 @@ vec3 lighting(
 
 	vec3 light_dir = normalize(light.position - object_point);
 
-	vec3 dot_n_l = dot(normalize(object_normal), light_dir); 
-	if (dot_n_l < 0.) {return 0;} 
+	float dot_n_l = dot(normalize(object_normal), light_dir); 
+	if (dot_n_l < 0.) {
+		return vec3(0.);
+	} 
 
 	vec3 mat_diffuse = mat.color * mat.diffuse; 
 	vec3 diffuse_intensity = light.color * mat_diffuse * dot_n_l;
