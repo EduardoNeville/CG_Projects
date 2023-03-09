@@ -243,7 +243,7 @@ bool ray_cylinder_intersection(
                 vec3 ic = intersection_point - cyl.center;
 
                 
-		normal = (ic - dot(cyl.axis, ic)) / cyl.radius;
+		normal = (ic - dot(cyl.axis, ic)*cyl.axis) / cyl.radius;
                 if (second_face) {
                         normal = -normal;
                 }
@@ -366,6 +366,14 @@ vec3 lighting(
 	- check whether it intersects an object from the scene
 	- update the lighting accordingly
 	*/
+
+        vec3 shadow_ray = normalize(light.position - object_point);
+        float col_distance;
+        vec3 col_normal = vec3(0.);
+        int mat_id = 0;
+        if (ray_intersection(object_point+0.01*shadow_ray, shadow_ray, col_distance, col_normal, mat_id)) {
+                return vec3(0.);
+        }
 
 
 	#if SHADING_MODE == SHADING_MODE_PHONG
