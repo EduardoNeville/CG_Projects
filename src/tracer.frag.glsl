@@ -392,7 +392,7 @@ vec3 lighting(
         float col_distance;
         vec3 col_normal = vec3(0.);
         int mat_id = 0;
-        if (ray_intersection(object_point+0.01*shadow_ray, shadow_ray, col_distance, col_normal, mat_id)) {
+        if (ray_intersection(object_point+0.001*shadow_ray, shadow_ray, col_distance, col_normal, mat_id)) {
                 return vec3(0.);
         }
 
@@ -444,27 +444,29 @@ vec3 render_light(vec3 ray_origin, vec3 ray_direction) {
 	*/
 
 	vec3 pix_color = vec3(0.);
-        //        float reflection_weight = 1;
-        //
-        //        for (int i_reflection = 0; i_reflection < NUM_REFLECTIONS+1; i_reflection++) {
+        float reflection_weight = 1.;
+
+        for (int i_reflection = 0; i_reflection < NUM_REFLECTIONS+1; i_reflection++) {
                 float col_distance;
                 vec3 col_normal = vec3(0.);
                 int mat_id = 0;
-                if(ray_intersection(ray_origin, ray_direction, col_distance, col_normal, mat_id)) {
-                        //                        break;
-                        //                }
+                if(!ray_intersection(ray_origin+0.001*ray_direction, ray_direction, col_distance, col_normal, mat_id)) {
+                        break;
+                }
                 
                 Material m = get_material(mat_id);
-                pix_color += m.color * m.ambient * light_color_ambient;
+                float cur_reflection_weight = reflection_weight * (i_reflection == NUM_REFLECTIONS?1.:(1. - m.mirror));
+                pix_color += m.color * m.ambient * light_color_ambient * cur_reflection_weight;
                 
                 #if NUM_LIGHTS != 0
                 for(int i_light = 0; i_light < NUM_LIGHTS; i_light++) {
-                        pix_color += lighting(ray_origin + col_distance*ray_direction, col_normal, -ray_direction, lights[i_light], m);
+                        pix_color += lighting(ray_origin + col_distance*ray_direction, col_normal, -ray_direction, lights[i_light], m) * cur_reflection_weight;
                 }
                 #endif
 
-                //                ray_origin = ray_origin + col_distance * ray_direction;
-                //                ray_direction = reflect(ray_direction, col_normal);
+                ray_origin = ray_origin + col_distance * ray_direction;
+                ray_direction = reflect(ray_direction, col_normal);
+                reflection_weight *= m.mirror;
         }
 
 	return pix_color;
