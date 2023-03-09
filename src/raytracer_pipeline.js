@@ -24,7 +24,7 @@ export class Raytracer {
 		this.scene_name = null
 		this.num_reflections = 2
 		this.b_vis_aabb  = false
-		this.shading_vis = "Normals"
+		this.shading_mode = "Normals"
 	}
 
 	shader_inject_defines(shader_src, code_injections) {
@@ -133,13 +133,16 @@ export class Raytracer {
 		// Fill NUM_CYLINDERS in shader source
 		code_injections['NUM_CYLINDERS'] = cylinders.length.toFixed(0)
 		
+		const shading_modes = {
+			Normals: 'SHADING_MODE_NORMALS',
+			Phong: 'SHADING_MODE_PHONG',
+			'Blinn Phong': 'SHADING_MODE_BLINN_PHONG',
+		}
 
-		if (this.shading_vis === "Normals") {
-			code_injections['SHADING_STRATEGY_NORMALS'] = '1'
-		} else if (this.shading_vis === "Color") {
-			code_injections['SHADING_STRATEGY_COLOR'] = '1'
+		if (shading_modes.hasOwnProperty(this.shading_mode)) {
+			code_injections['SHADING_MODE'] = shading_modes[this.shading_mode]
 		} else {
-			throw new Error(`shadig vis ${this.shading_vis}`)
+			throw new Error(`Not Implemented shading mode ${this.shading_mode}`)
 		}
 
 		// regl 2.1.0 loads a uniform array all at once
@@ -235,13 +238,17 @@ export class Raytracer {
 		return this.scenes.map((s) => s.name)
 	}
 
-	async draw_scene({scene_name, num_reflections, shading_vis}) {
+	async draw_scene({scene_name, num_reflections, shading_mode}) {
 		if (num_reflections === undefined || num_reflections < 0) {
 			num_reflections = this.num_reflections
 		}
 
-		if (shading_vis === undefined) {
-			shading_vis = this.shading_vis
+		if (shading_mode === undefined) {
+			shading_mode = this.shading_mode
+		}
+
+		if (scene_name === undefined) {
+			scene_name = this.scene_name
 		}
 
 		const scene_def = this.scenes_by_name[scene_name]
@@ -251,10 +258,10 @@ export class Raytracer {
 			return 
 		}
 
-		if(scene_name != this.scene_name || num_reflections != this.num_reflections || shading_vis != this.shading_vis) {
+		if(scene_name != this.scene_name || num_reflections != this.num_reflections || shading_mode != this.shading_mode) {
 			this.scene_name = scene_name
 			this.num_reflections = num_reflections
-			this.shading_vis = shading_vis
+			this.shading_mode = shading_mode
 
 			const pipe = this.rt_pipeline_for_scene(scene_def)
 			
@@ -281,10 +288,7 @@ export class Raytracer {
 	}
 
 	saved_image_suffix() {
-		if(this.shading_vis === "Color") {
-			return ""
-		}
-		return '_' + this.shading_vis.toLowerCase()
+		return '_' + this.shading_mode.replace(' ', '')
 	}
 
 	save_image() {

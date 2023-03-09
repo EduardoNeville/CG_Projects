@@ -60,7 +60,7 @@ function scene_choser(elem, rt, initial_scene) {
 		buttons[scn] = item
 	})
 
-	if(! set_scene_from_url() ) {
+	if((! set_scene_from_url()) && initial_scene !== undefined) {
 		set_scene(initial_scene)
 	}
 }
@@ -99,30 +99,30 @@ function reflection_choser(elem, rt) {
 	update()
 }
 
-function shading_vis_menu(elem, rt) {
+function shading_mode_menu(elem, rt) {
 	const buttons = []
 
 	function update() {
 		Object.values(buttons).forEach((item) => {
 			item.classList.remove('selected')
 		})
-		buttons[rt.shading_vis].classList.add('selected')
+		buttons[rt.shading_mode].classList.add('selected')
 	}
 
-	function set_shading_vis(shading_vis) {
+	function set_shading_mode(shading_mode) {
 		rt.draw_scene({
 			scene_name: rt.scene_name,
-			shading_vis: shading_vis,
+			shading_mode: shading_mode,
 		})
 		update()
 	}
 
-	const available_strategies = ["Color", "Normals"]
+	const available_strategies = ["Normals", "Blinn Phong", "Phong"]
 
 	available_strategies.forEach((strat) => {
 		const item = document.createElement('li')
 		item.textContent = strat
-		item.addEventListener('click', () => set_shading_vis(strat))
+		item.addEventListener('click', () => set_shading_mode(strat))
 		elem.appendChild(item)
 		buttons[strat] = item
 	})
@@ -137,5 +137,5 @@ export function init_menu(rt, initial_scene) {
 	const elem_reflections = document.querySelector('#menu-reflections')
 	reflection_choser(elem_reflections, rt)
 
-	shading_vis_menu(document.getElementById('menu-shading'), rt)
+	shading_mode_menu(document.getElementById('menu-shading'), rt)
 }

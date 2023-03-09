@@ -62,7 +62,21 @@ async function main() {
 		rt.save_image()
 	})
 
-	init_menu(rt, 'creature')
+
+	rt.draw_scene({
+		scene_name: 'creature', 
+		shading_mode: 'Normals', 
+		num_reflections: 0,
+	})
+
+	rt.draw_scene({
+		scene_name: 'castle', 
+		shading_mode: 'Blinn Phong', 
+		num_reflections: 2,
+	})
+
+	init_menu(rt)
+
 }
 
 async function entrypoint() {
