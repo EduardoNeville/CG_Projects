@@ -173,11 +173,19 @@ bool ray_plane_intersection(
 		vec3 plane_normal, float plane_offset, 
 		out float t, out vec3 normal) 
 {
-	// can use the plane center if you need it
+        // can use the plane center if you need it
 	vec3 plane_center = plane_normal * plane_offset;
 	t = MAX_RANGE + 10.;
-	//normal = ...;
-	return false;
+
+        if (abs(dot(plane_normal, ray_direction)) <= 0.00001) {
+                return false;
+        }
+
+        t = (plane_offset - dot(plane_normal, ray_origin)) / dot(plane_normal, ray_direction);
+
+	normal = (dot(plane_normal, ray_direction)<0.?1.:-1.)*plane_normal;
+
+        return t > 0.;
 }
 
 /*
@@ -188,10 +196,62 @@ bool ray_cylinder_intersection(
 		Cylinder cyl,
 		out float t, out vec3 normal) 
 {
-	vec3 intersection_point;
-	t = MAX_RANGE + 10.;
+        vec3 oc = ray_origin - cyl.center;
+        float da = dot(ray_direction, cyl.axis);
 
-	return false;
+	vec2 solutions; // solutions will be stored here
+
+	int num_solutions = solve_quadratic(
+		// A: t^2 * ||d||^2 = dot(ray_direction, ray_direction) but ray_direction is normalized
+		da*da-1. , 
+		// B: t * (2d dot (o - c))
+	        2.*dot(oc, cyl.axis)*da - 2.*dot(ray_direction, oc),	
+		// C: - ||o-c||^2 + r^2				
+		cyl.radius*cyl.radius + dot(oc, cyl.axis)*dot(oc, cyl.axis) - dot(oc, oc),
+		// where to store solutions
+		solutions
+	);
+
+	// result = distance to collision
+	// MAX_RANGE means there is no collision found
+	t = MAX_RANGE+10.;
+	bool collision_happened = false;
+        bool second_face = false;
+
+	if (num_solutions >= 1 && solutions[0] > 0.) {
+                vec3 intersection_point = ray_origin + ray_direction * solutions[0];
+                if (abs(dot(cyl.axis, intersection_point - cyl.center)) <= cyl.height) {
+                        t = solutions[0];
+                }
+                
+	}
+        
+	if (num_solutions >= 2 && solutions[1] > 0. && solutions[1] < t) {
+	        vec3 intersection_point = ray_origin + ray_direction * solutions[1];
+                if (abs(dot(cyl.axis, intersection_point - cyl.center)) <= cyl.height) {
+                        t = solutions[1];
+                        if (solutions[0] < solutions[1]) {
+                                second_face = true;
+                        }
+                } else {
+                        second_face = true;
+                }
+	}
+
+	if (t < MAX_RANGE) {
+		vec3 intersection_point = ray_origin + ray_direction * t;
+                vec3 ic = intersection_point - cyl.center;
+
+                
+		normal = (ic - dot(cyl.axis, ic)) / cyl.radius;
+                if (second_face) {
+                        normal = -normal;
+                }
+
+		return true;
+	} else {
+		return false;
+	}
 }
 
 
