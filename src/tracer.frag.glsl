@@ -358,32 +358,30 @@ vec3 lighting(
 	vec3 mat_diffuse = mat.color * mat.diffuse; 
 	vec3 mat_d_dot = mat_diffuse * dot_n_l;
 	
-
+	if (dot_n_l < 0.) {
+		mat_d_dot = vec3(0.);
+	} 
 
 	vec3 mat_specular = mat.color * mat.specular;
 
-	
 	/**
 	 * Used in Blinn-Phong
 	*/
  
 	float spec_dot = 0.;
-	vec3 reflected_light = normalize(reflect(-light_dir, object_normal));
+	vec3 reflected_light = reflect(light_dir, normalize(object_normal));
 
 	#if SHADING_MODE == SHADING_MODE_PHONG
-		spec_dot = dot(reflected_light,direction_to_camera);
+		spec_dot = dot(reflected_light, normalize(direction_to_camera));
 	#endif
-	vec3 half_vec = (direction_to_camera - light_dir) / length(direction_to_camera -light_dir);
+	
+	vec3 half_vec = (normalize(direction_to_camera) + light_dir) / length(normalize(direction_to_camera) + light_dir);
 
 	#if SHADING_MODE == SHADING_MODE_BLINN_PHONG
-		spec_dot = dot(half_vec, object_normal);
+		spec_dot = dot(half_vec, normalize(object_normal));
 	#endif
 
 	vec3 mat_s_dot = mat_specular * pow(spec_dot, mat.shininess);
-
-	if (dot_n_l < 0.) {
-		mat_d_dot = vec3(0.);
-	} 
 
 	if (dot(reflected_light,direction_to_camera) < 0.){
 		mat_s_dot = vec3(0.);
@@ -397,15 +395,13 @@ vec3 lighting(
 	- update the lighting accordingly
 	*/
 
-        vec3 shadow_ray = normalize(light.position - object_point);
-        float col_distance;
-        vec3 col_normal = vec3(0.);
-        int mat_id = 0;
-        if (ray_intersection(object_point+0.001*shadow_ray, shadow_ray, col_distance, col_normal, mat_id)) {
-                return vec3(0.);
-        }
-
-
+	vec3 shadow_ray = normalize(light.position - object_point);
+	float col_distance;
+	vec3 col_normal = vec3(0.);
+	int mat_id = 0;
+	if (ray_intersection(object_point+0.001*shadow_ray, shadow_ray, col_distance, col_normal, mat_id)) {
+		return vec3(0.);
+	}
 
 	return diffuse_specular_intensity;
 }
