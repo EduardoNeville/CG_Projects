@@ -350,10 +350,11 @@ vec3 lighting(
 	You can use existing methods for `vec3` objects such as `mirror`, `reflect`, `norm`, `dot`, and `normalize`.
 	*/
 
-	vec3 light_dir = normalize(light.position - object_point);
+	vec3 n_light_dir = normalize(light.position - object_point);
+	vec3 n_obj_norm = normalize(object_normal);
 
 	// Diffuse 
-	float dot_n_l = dot(normalize(object_normal), light_dir); 
+	float dot_n_l = dot(n_obj_norm, n_light_dir); 
 
 	vec3 mat_diffuse = mat.color * mat.diffuse; 
 	vec3 mat_d_dot = mat_diffuse * dot_n_l;
@@ -369,21 +370,23 @@ vec3 lighting(
 	*/
  
 	float spec_dot = 0.;
-	vec3 reflected_light = reflect(light_dir, normalize(object_normal));
+	// check in light to negative
+	vec3 reflected_light = reflect(-n_light_dir, n_obj_norm);
+	vec3 n_dir_cam = normalize(direction_to_camera);
 
 	#if SHADING_MODE == SHADING_MODE_PHONG
-		spec_dot = dot(reflected_light, normalize(direction_to_camera));
+		spec_dot = dot(reflected_light, n_dir_cam));
 	#endif
 	
-	vec3 half_vec = (normalize(direction_to_camera) + light_dir) / length(normalize(direction_to_camera) + light_dir);
+	vec3 half_vec = ((n_dir_cam) + n_light_dir) / length(n_dir_cam + light_dir);
 
 	#if SHADING_MODE == SHADING_MODE_BLINN_PHONG
-		spec_dot = dot(half_vec, normalize(object_normal));
+		spec_dot = dot(half_vec, n_obj_norm);
 	#endif
 
 	vec3 mat_s_dot = mat_specular * pow(spec_dot, mat.shininess);
 
-	if (dot(reflected_light,direction_to_camera) < 0.){
+	if (dot(reflected_light, n_dir_cam) < 0.){
 		mat_s_dot = vec3(0.);
 	}
 
