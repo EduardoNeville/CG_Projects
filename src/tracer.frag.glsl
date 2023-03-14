@@ -395,13 +395,14 @@ vec3 lighting(
 	- update the lighting accordingly
 	*/
 
-	vec3 shadow_ray = normalize(light.position - object_point);
 	float col_distance;
 	vec3 col_normal = vec3(0.);
 	int mat_id = 0;
-	if (ray_intersection(object_point+0.001*shadow_ray, shadow_ray, col_distance, col_normal, mat_id)) {
-		return vec3(0.);
-	}
+        if (ray_intersection(object_point+0.01*light_dir, light_dir, col_distance, col_normal, mat_id)) {
+                if (distance(light.position, object_point) > col_distance) {
+                        return vec3(0.);
+                }
+        }
 
 	return diffuse_specular_intensity;
 }
