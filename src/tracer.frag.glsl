@@ -397,6 +397,7 @@ vec3 lighting(
 	- check whether it intersects an object from the scene
 	- update the lighting accordingly
 	*/
+        
 
 	float col_distance;
 	vec3 col_normal = vec3(0.);
