@@ -375,7 +375,7 @@ vec3 lighting(
 	vec3 n_dir_cam = normalize(direction_to_camera);
 
 	#if SHADING_MODE == SHADING_MODE_PHONG
-		spec_dot = dot(reflected_light, n_dir_cam));
+		spec_dot = dot(reflected_light, n_dir_cam);
 	#endif
 	
 	vec3 half_vec = ((n_dir_cam) + n_light_dir) / length(n_dir_cam + n_light_dir);
