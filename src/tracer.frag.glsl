@@ -378,7 +378,7 @@ vec3 lighting(
 		spec_dot = dot(reflected_light, n_dir_cam));
 	#endif
 	
-	vec3 half_vec = ((n_dir_cam) + n_light_dir) / length(n_dir_cam + light_dir);
+	vec3 half_vec = ((n_dir_cam) + n_light_dir) / length(n_dir_cam + n_light_dir);
 
 	#if SHADING_MODE == SHADING_MODE_BLINN_PHONG
 		spec_dot = dot(half_vec, n_obj_norm);
@@ -401,7 +401,7 @@ vec3 lighting(
 	float col_distance;
 	vec3 col_normal = vec3(0.);
 	int mat_id = 0;
-        if (ray_intersection(object_point+0.01*light_dir, light_dir, col_distance, col_normal, mat_id)) {
+        if (ray_intersection(object_point+0.01*n_light_dir, n_light_dir, col_distance, col_normal, mat_id)) {
                 if (distance(light.position, object_point) > col_distance) {
                         return vec3(0.);
                 }
