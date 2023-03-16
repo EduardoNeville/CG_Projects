@@ -79,7 +79,7 @@ async function main() {
 		void main() {
 			// #TODO GL1.1.1.1 Edit the vertex shader to apply mouse_offset translation to the vertex position.
 			// We have to return a vec4, because homogenous coordinates are being used.
-			gl_Position = vec4(position, 0, 1);
+			gl_Position = vec4(position + mouse_offset, 0, 1);
 		}`,
 			
 		/* 
@@ -122,7 +122,7 @@ async function main() {
 
 		void main() {
 			// #TODO GL1.1.2.1 Edit the vertex shader to apply mat_transform to the vertex position.
-			gl_Position = vec4(position, 0, 1);
+			gl_Position = mat_transform * vec4(position, 0, 1);
 		}`,
 		
 		frag: /*glsl*/`
@@ -175,7 +175,8 @@ async function main() {
 	const color_blue = [0.2, 0.5, 1.0]
 
 	// Matrices allocated for reuse, you do not have to use them
-	const mat_transform = mat4.create()
+  const mat_transform = mat4.create()
+  const mat_transformRT = mat4.create()
 	const mat_rotation = mat4.create()
 	const mat_translation = mat4.create()
 
@@ -192,8 +193,8 @@ async function main() {
 		// #TODO GL1.1.1.2 Draw the blue triangle translated by mouse_offset
 		
 		draw_triangle_with_offset({
-			mouse_offset: [0, 0],
-			color: [0.5, 0.5, 0.5],
+			mouse_offset: mouse_offset,
+			color: color_blue,
 		});
 
 		/*
@@ -205,15 +206,21 @@ async function main() {
 				* a red triangle spinning at [0.5, 0, 0]
 			You do not have to apply the mouse_offset to them.
 		*/
-		//draw_triangle_with_transform({
-		//	mat_transform: mat_transform,
-		//	color: [0.5, 0.5, 0.5],
-		//});
 
-		//draw_triangle_with_transform({
-		//	mat_transform: mat_transform,
-		//	color: [0.5, 0.5, 0.5],
-		//});
+      mat4.fromTranslation(mat_translation, [0.5, 0, 0]);
+      mat4.fromZRotation(mat_rotation, sim_time * 30 * Math.PI / 180);
+      mat4.multiply(mat_transform, mat_translation, mat_rotation);
+      mat4.multiply(mat_transformRT, mat_rotation, mat_translation);
+      
+		draw_triangle_with_transform({
+			mat_transform: mat_transformRT,
+			color: color_green,
+		});
+
+		draw_triangle_with_transform({
+			mat_transform: mat_transform,
+			color: color_red,
+		});
 
 		// You can write whatever you need in the debug box
 		debug_text.textContent = `
