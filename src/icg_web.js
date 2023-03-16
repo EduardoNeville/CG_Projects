@@ -11,7 +11,7 @@ This promise gets resolved when the document has loaded
 * loading - https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
 * what is a promise - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
 */
-const DOM_loaded_promise = new Promise((accept, reject) => {
+export const DOM_loaded_promise = new Promise((accept, reject) => {
 	if (document.readyState === 'loading') {  // Loading hasn't finished yet
 		 document.addEventListener('DOMContentLoaded', accept);
 	} else {  // `DOMContentLoaded` has already fired
@@ -19,14 +19,14 @@ const DOM_loaded_promise = new Promise((accept, reject) => {
 	}
 }); 
 
-function async_timeout(time_s) {
+export function async_timeout(time_s) {
 	return new Promise(resolve => setTimeout(resolve, time_s*1000));
 }
 
 /*
 Downloads an image from an URL
 */
-function load_image(img_url) {
+export function load_image(img_url) {
 	return new Promise((resolve, reject) => {
 		const img_obj = new Image;
 		img_obj.crossOrigin = "anonymous";
@@ -45,7 +45,7 @@ We need to provide the regl instance which communicates with the GPU to put the 
 	tex_options = override construction options
 		https://github.com/regl-project/regl/blob/master/API.md#textures
 */
-async function load_texture(regl_instance, img_url, tex_options) {
+export async function load_texture(regl_instance, img_url, tex_options) {
 	const img = await load_image(img_url);
 
 	return regl_instance.texture(Object.assign({
@@ -56,7 +56,7 @@ async function load_texture(regl_instance, img_url, tex_options) {
 	}, tex_options))
 }
 
-async function load_text(url) {
+export async function load_text(url) {
 	try {
 		const response = await fetch(url);
 		const response_text = await response.text();
@@ -111,17 +111,14 @@ DOM_loaded_promise.then(() => {
 	});
 })
 
-function register_keyboard_action(key, func) {
+export function register_keyboard_action(key, func) {
 	key = key.toLowerCase();
 	const handlers = keyboard_actions[key] || [];
 	keyboard_actions[key] = handlers;
 	handlers.push(func);
 }
 
-function register_button_with_hotkey(button_id, hotkey, func) {
+export function register_button_with_hotkey(button_id, hotkey, func) {
 	register_keyboard_action(hotkey, func)
 	document.getElementById(button_id).addEventListener('click', func)
 }
-
-export {DOM_loaded_promise, register_keyboard_action, register_button_with_hotkey, keyboard_actions, load_texture, load_text}
-

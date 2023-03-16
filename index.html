@@ -6,33 +6,35 @@
 	<meta http-equiv="content-type" content="text/html; charset=utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-	<title>ICG Raytracing</title>
+	<title>ICG : 3D Solar System</title>
 	<meta name="author" content="Krzysztof Lis">
 
-	<link rel="stylesheet" href="resources/style.css">
+	<link rel="stylesheet" href="style.css">
 </head>
 <body>
-	<script src="src/main.js" type="module" ></script>
 
-	<main>
-		<div id="debug-overlay">
-			<pre id="debug-text"></pre>
-		</div>
+<script src="src/main.js" type="module" ></script>
 
-		<canvas id="viewport"></canvas>
+<!-- <canvas id="plot"></canvas> -->
+<!-- regl will add its own full-screen canvas -->
 
-	</main>
-	<div id="menu">
-		<h4>ICG Raytracer</h4> 
-		<a href="RT2_light_rays.html">Task Description</a>
-		<span id="btn-screenshot" class="button"><strong class="keyboard">s</strong> Save image </span>
-		<h4>Scenes</h4>
-		<ul id="menu-scenes" class="selector"></ul>
-		<h4>Shading strategy</h4>
-		<ul id="menu-shading" class="selector horizontal"></ul>
-		<h4>Reflections</h4>
-		<ul id="menu-reflections" class="selector horizontal"></ul>
-	</div>
+<div id="debug-overlay">
+	<p>
+		ICG Exercise: 3D Solar System
+		⁙⁙ docs:
+		<a href="https://github.com/regl-project/regl/blob/gh-pages/API.md">regl</a>,
+		<a href="http://glmatrix.net/docs/">gl-matrix</a>,
+		<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript">MDN</a>
+		⁙⁙ drag with mouse rotate
+		⁙⁙ scroll to zoom
+		⁙⁙ show/hide grid <strong class="keyboard">g</strong>
+		⁙⁙ pause <strong class="keyboard">p</strong>
+		⁙⁙ show/hide overlay <strong class="keyboard">h</strong>
+		⁙⁙ predefined views <strong class="keyboard">1</strong>, <strong class="keyboard">2</strong>, <strong class="keyboard">3</strong>
+	</p>
+	<ul id="view-select">Focus:</ul>
+	<pre id="debug-text"></pre>
+</div>
 
 </body>
 </html>
