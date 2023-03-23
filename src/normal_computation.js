@@ -27,8 +27,17 @@ function compute_triangle_normals_and_angle_weights(mesh) {
 		const vert3 = get_vert(mesh, mesh.faces[3*i_face + 2])
 		
 		// Modify the way triangle normals and angle_weights are computed
-		tri_normals.push([1., 0., 0.])
-		angle_weights.push([1., 1., 1.])
+      const edge12 = vec3.subtract([0., 0., 0.], vert2, vert1)
+      const edge21 = vec3.subtract([0., 0., 0.], vert1, vert2)
+      const edge13 = vec3.subtract([0., 0., 0.], vert3, vert1)
+      const edge31 = vec3.subtract([0., 0., 0.], vert1, vert3)
+      const edge23 = vec3.subtract([0., 0., 0.], vert3, vert2)
+      const edge32 = vec3.subtract([0., 0., 0.], vert2, vert3)
+      const w1 = vec3.angle(edge13, edge12)
+      const w2 = vec3.angle(edge21, edge23)
+      const w3 = vec3.angle(edge32, edge31)
+      tri_normals.push(vec3.normalize([0., 0., 0.], vec3.cross([0., 0., 0.], edge12, edge13)))
+	    angle_weights.push([w1, w2, w3])
 	}
 	return [tri_normals, angle_weights]
 }
