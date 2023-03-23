@@ -66,18 +66,18 @@ function compute_vertex_normals(mesh, tri_normals, angle_weights) {
                 const v2 = mesh.vertex_positions.slice(iv2 * 3, iv2 * 3 + 3)
                 const v3 = mesh.vertex_positions.slice(iv3 * 3, iv3 * 3 + 3)
 
-                const e1 = sub([], v2, v1)
-                const e2 = sub([], v3, v1)
-                const normal_tri = normalize([], cross([], e1, e2))
+                const e1 = vec3.sub([], v2, v1)
+                const e2 = vec3.sub([], v3, v1)
+                const normal_tri = vec3.normalize([], vec3.cross([], e1, e2))
 
-                vertex_normals[iv1] = add([], vertex_normals[iv1], scale([], normal_tri, angle_weights[iv1]))
-                vertex_normals[iv2] = add([], vertex_normals[iv2], scale([], normal_tri, angle_weights[iv2]))
-                vertex_normals[iv3] = add([], vertex_normals[iv3], scale([], normal_tri, angle_weights[iv3]))
+                vertex_normals[iv1] = vec3.add([], vertex_normals[iv1], vec3.scale([], normal_tri, angle_weights[iv1]))
+                vertex_normals[iv2] = vec3.add([], vertex_normals[iv2], vec3.scale([], normal_tri, angle_weights[iv2]))
+                vertex_normals[iv3] = vec3.add([], vertex_normals[iv3], vec3.scale([], normal_tri, angle_weights[iv3]))
 	}
 
 	for(let i_vertex = 0; i_vertex < num_vertices; i_vertex++) {
 		// Normalize the vertices
-		vertex_normals[i_vertex] = normalize([], vertex_normals[i_vertex])
+		vertex_normals[i_vertex] = vec3.normalize([], vertex_normals[i_vertex])
         }
 
 	return vertex_normals
