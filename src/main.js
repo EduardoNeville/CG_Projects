@@ -186,23 +186,31 @@ async function main() {
 	function update_cam_transform(frame_info) {
 		const {cam_angle_z, cam_angle_y, cam_distance_factor} = frame_info
 
-		/* TODO GL1.2.2
-		Calculate the world-to-camera transformation matrix for turntable camera.
-		The camera orbits the scene 
-		* cam_distance_base * cam_distance_factor = distance of the camera from the (0, 0, 0) point
-		* cam_angle_z - camera ray's angle around the Z axis
-		* cam_angle_y - camera ray's angle around the Y axis
-		*/
+		  /* TODO GL1.2.2
+		     Calculate the world-to-camera transformation matrix for turntable camera.
+		     The camera orbits the scene 
+		     * cam_distance_base * cam_distance_factor = distance of the camera from the (0, 0, 0) point
+		     * cam_angle_z - camera ray's angle around the Z axis
+		     * cam_angle_y - camera ray's angle around the Y axis
+		     */
 
-		// Example camera matrix, looking along forward-X, edit this
-		const look_at = mat4.lookAt(mat4.create(), 
-			[-5, 0, 0], // camera position in world coord
-			[0, 0, 0], // view target point
-			[0, 0, 1], // up vector
-		)
-		// Store the combined transform in mat_turntable
-		// frame_info.mat_turntable = A * B * ...
-		mat4_matmul_many(frame_info.mat_turntable, look_at) // edit this
+      //distance drom the camera to origin
+      const r = cam_distance_base*cam_distance_factor
+      /*The eye vector defines the position of the camera, 
+        the at vector is the position where the camera is looking at
+        and the up vector specifies the up direction of the camera. */
+ 
+      // Example camera matrix, looking along forward-X, edit this
+      const look_at = mat4.lookAt(mat4.create(), 
+                                  [-r, 0, 0],
+                                  [0, 0, 0], // view target point
+                                  [0, 0, 1], // up vector
+                                 )
+      // Store the combined transform in mat_turntable
+      const M_rot_z = mat4.fromZRotation(mat4.create(), -cam_angle_z)
+      const M_rot_y = mat4.fromYRotation(mat4.create(),-cam_angle_y)
+      //frame_info.mat_turntable = A * B * ...
+      mat4_matmul_many(frame_info.mat_turntable, look_at, M_rot_z,M_rot_y)
 	}
 
 	update_cam_transform(frame_info)
