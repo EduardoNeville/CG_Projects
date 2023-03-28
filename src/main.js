@@ -207,10 +207,10 @@ async function main() {
                                   [0, 0, 1], // up vector
                                  )
       // Store the combined transform in mat_turntable
-      const M_rot_z = mat4.fromZRotation(mat4.create(), -cam_angle_z)
-      const M_rot_y = mat4.fromYRotation(mat4.create(),-cam_angle_y)
+      const M_rot_z = mat4.fromZRotation(mat4.create(), cam_angle_z)
+      const M_rot_y = mat4.fromYRotation(mat4.create(), cam_angle_y)
       //frame_info.mat_turntable = A * B * ...
-      mat4_matmul_many(frame_info.mat_turntable, look_at, M_rot_z,M_rot_y)
+      mat4_matmul_many(frame_info.mat_turntable, look_at,M_rot_y, M_rot_z)
 	}
 
 	update_cam_transform(frame_info)
