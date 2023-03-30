@@ -123,11 +123,14 @@ function meshes_construct(regl, resources) {
 		#TODO GL3.1.2: Adjust the texture coordinates of the floor mesh
 				so that the tiles on the floor are repeated 4 times in each direction.
 		*/
+
+                // Texture coordinates for the floor
+                // Change from 1 -> 4 to repeat the texture 4 times
 		vertex_tex_coords: [
-			[0, 0],
-			[1, 0],
-			[1, 1],
-			[0, 1],
+                        [0, 0],
+                        [4, 0],
+                        [4, 4],
+                        [0, 4],
 		],
 		faces: [
 			[0, 1, 2],
@@ -172,6 +175,8 @@ export async function load_resources(regl) {
 	*/
 	const tex_load_options = {
 		// wrap: ...
+                wrap: 'mirror'
+
 	}
 	resource_promises[floor_tex_name] = load_texture(regl, `./textures/${floor_tex_name}`, tex_load_options)
 
