@@ -1,8 +1,8 @@
-precision highp float;
+precision highp float; 
 
 /* #TODO GL3.3.1: Pass on the normals and fragment position in camera coordinates */
-//varying ...
-//varying ...
+varying vec3 norm_cam;
+varying vec3 frag_pos_cam;
 varying vec2 v2f_uv;
 
 
@@ -27,6 +27,7 @@ void main() {
 	You should be able to copy your phong lighting code from GL2 mostly as-is,
 	though notice that the light and view vectors need to be computed from scratch here; 
 	this time, they are not passed from the vertex shader. 
+
 	Also, the light/material colors have changed; see the Phong lighting equation in the handout if you need
 	a refresher to understand how to incorporate `light_color` (the diffuse and specular
 	colors of the light), `v2f_diffuse_color` and `v2f_specular_color`.
@@ -49,6 +50,70 @@ void main() {
 
 	Make sure to normalize values which may have been affected by interpolation!
 	*/
-	vec3 color = light_color * material_color;
+
+	/*vec4 vertex_position_view = mat_model_view*vec4(vertex_position,1);
+	vec4 vertex_normal_view = vec4(mat_normals_to_view*vertex_normal,0);
+	vec4 eye_dir = normalize(vec4(0, 0, 0, 1) - vertex_position_view);
+	vec4 light_position_d4 = vec4(light_position,1);
+
+	vec4 n_light_dir = normalize(light_position_d4 - vertex_position_view);
+	vec4 n_obj_norm = normalize(vertex_normal_view);
+
+	float dot_n_l = dot(n_obj_norm, n_light_dir);
+
+	vec3 mat_d_dot = material_color * dot_n_l;
+
+	if (dot_n_l <= 0.) {
+		mat_d_dot = vec3(0.);
+	} 
+
+	float spec_dot = 0.;
+	// check in light to negative
+	vec4 reflected_light = reflect(-n_light_dir, n_obj_norm);
+	//vec4 n_dir_cam = vec4(eye_position;
+
+	vec4 half_vec = normalize(eye_dir + n_light_dir);
+	
+	spec_dot = dot(half_vec, n_obj_norm);
+	
+	vec3 mat_s_dot = material_color * pow(spec_dot, material_shininess);
+
+	if (dot_n_l <= 0. || spec_dot <= 0.){
+		mat_s_dot = vec3(0.);
+	}
+
+	color = material_ambient*light_color*material_color + light_color *  (mat_d_dot + mat_s_dot);
+	gl_Position = mat_mvp * vec4(vertex_position, 1);*/
+	float m_a = 0.1,
+	float dist_frag_light = vec3.squaredDistance(frag_pos_cam,light_position);
+	vec3 eye_dir = normalize(vec3(0, 0, 0) - frag_pos_cam);
+
+	vec3 n_light_dir = normalize(light_position - frag_pos_cam);
+	vec3 n_obj_norm = normalize(norm_cam);
+
+	float dot_n_l = dot(n_obj_norm, n_light_dir);
+
+	vec3 mat_d_dot = material_color * dot_n_l;
+
+	if (dot_n_l <= 0.) {
+		mat_d_dot = vec3(0.);
+	} 
+
+	float spec_dot = 0.;
+	// check in light to negative
+	vec3 reflected_light = reflect(-n_light_dir, n_obj_norm);
+
+	vec3 half_vec = normalize(eye_dir + n_light_dir);
+	
+	spec_dot = dot(half_vec, n_obj_norm);
+	
+	vec3 mat_s_dot = material_color * pow(spec_dot, material_shininess);
+
+	if (dot_n_l <= 0. || spec_dot <= 0.){
+		mat_s_dot = vec3(0.);
+	}
+
+
+	vec3 color = light_color * m_a + light_color *  (mat_d_dot + mat_s_dot) * (1./pow(dist_frag_light,2));
 	gl_FragColor = vec4(color, 1.); // output: RGBA in 0..1 range
 }
