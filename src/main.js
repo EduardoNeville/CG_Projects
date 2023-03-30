@@ -167,16 +167,24 @@ async function main() {
 		Copy turntable camera from GL2
 		*/
 
-		// Example camera matrix, looking along forward-X, edit this
-		const look_at = mat4.lookAt(mat4.create(), 
-			[-5, 0, 0], // camera position in world coord
-			[0, 0, 0], // view target point
-			[0, 0, 1], // up vector
-		)
-		// Store the combined transform in mat_turntable
-		// frame_info.mat_turntable = A * B * ...
-		mat4_matmul_many(frame_info.mat_turntable, look_at) // edit this
-	}
+      //distance drom the camera to origin
+      const r = cam_distance_base*cam_distance_factor
+      /*The eye vector defines the position of the camera, 
+        the at vector is the position where the camera is looking at
+        and the up vector specifies the up direction of the camera. */
+ 
+      // Example camera matrix, looking along forward-X, edit this
+      const look_at = mat4.lookAt(mat4.create(), 
+                                  [-r, 0, 0],
+                                  [0, 0, 0], // view target point
+                                  [0, 0, 1], // up vector
+                                 )
+      // Store the combined transform in mat_turntable
+      const M_rot_z = mat4.fromZRotation(mat4.create(), cam_angle_z)
+      const M_rot_y = mat4.fromYRotation(mat4.create(), cam_angle_y)
+      //frame_info.mat_turntable = A * B * ...
+      mat4_matmul_many(frame_info.mat_turntable, look_at,M_rot_y, M_rot_z)
+  }
 
 	update_cam_transform(frame_info)
 
