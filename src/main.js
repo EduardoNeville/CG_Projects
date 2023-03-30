@@ -1,65 +1,32 @@
 
 import {createREGL} from "../lib/regljs_2.1.0/regl.module.js"
 import {vec2, vec3, vec4, mat3, mat4} from "../lib/gl-matrix_3.3.0/esm/index.js"
+import {quat} from "../lib/gl-matrix_3.3.0/esm/index.js"
 
 import {DOM_loaded_promise, load_text, register_keyboard_action} from "./icg_web.js"
-import {icg_mesh_load_obj} from "./icg_mesh.js"
 import {deg_to_rad, mat4_to_string, vec_to_string, mat4_matmul_many} from "./icg_math.js"
-import {icg_mesh_make_uv_sphere} from "./icg_mesh.js"
 
-import {create_scene_content, SysRenderNormals, SysRenderShadePervertex, SysRenderShadePerpixel} from "./mesh_render.js"
+
+import {SysRenderTextured, SysRenderMirror, SysRenderMeshesWithLight} from "./mesh_render.js"
 
 import {create_choice_menu} from "./menu.js"
-import { mesh_preprocess } from "./normal_computation.js"
+import { create_scene_content_reflections, create_scene_content_shadows, load_resources } from "./scene.js"
 
-async function load_resources(regl) {
-	/*
-	The textures fail to load when the site is opened from local file (file://) due to "cross-origin".
-	Solutions:
-	* run a local webserver
-		caddy file-server -browse -listen 0.0.0.0:8000
-		# or
-		python -m http.server 8000
-		# open localhost:8000
-	OR
-	* run chromium with CLI flag
-		"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" --allow-file-access-from-files index.html
-		
-	* edit config in firefox
-		security.fileuri.strict_origin_policy = false
-	*/
 
-	// Start downloads in parallel
-	const resource_promises = {}
-	
-	const shaders_to_load = [
-		'normals.vert.glsl', 'normals.frag.glsl',
-		'shade_pervertex.vert.glsl', 'shade_pervertex.frag.glsl',
-		'shade_perpixel.vert.glsl', 'shade_perpixel.frag.glsl',
-	]
-	for(const shader_name of shaders_to_load) {
-		resource_promises[shader_name] = load_text(`./src/${shader_name}`)
+function sys_orbit(scene_info) {
+
+	const {sim_time} = scene_info
+	const q = quat.create()
+
+	for(const actor of scene_info.actors) {
+		const {orbit} = actor
+
+		if ( orbit ) {
+			quat.setAxisAngle(q, orbit.axis, orbit.angular_velocity * sim_time)
+			vec3.transformQuat(actor.translation, [orbit.radius, 0, 0], q)
+			vec3.add(actor.translation, actor.translation, orbit.anchor)
+		}
 	}
-
-	const meshes_to_load = [
-		"vase1.obj", "cup2.obj", "table.obj", "shadow_scene__terrain.obj", "shadow_scene__wheel.obj",
-	]
-	for(const mesh_name of meshes_to_load) {
-		resource_promises[mesh_name] = icg_mesh_load_obj(`./meshes/${mesh_name}`)
-	}
-
-	// Wait for all downloads to complete
-	const resources = {}
-	for (const [key, promise] of Object.entries(resource_promises)) {
-		resources[key] = await promise
-	}
-
-	// Compute normals for meshes
-	for(const mesh_name of meshes_to_load) {
-		resources[mesh_name] = mesh_preprocess(regl, resources[mesh_name])
-	}
-
-	return resources
 }
 
 async function main() {
@@ -72,12 +39,14 @@ async function main() {
 	// https://github.com/regl-project/regl/blob/master/API.md
 	const regl = createREGL({
 		profile: true, // if we want to measure the size of buffers/textures in memory
+		extensions: ['OES_texture_float', 'OES_texture_float_linear',  'WEBGL_color_buffer_float',
+			'OES_vertex_array_object', 'OES_element_index_uint'
+		],
 	})
 	// The <canvas> (HTML element for drawing graphics) was created by REGL, lets take a handle to it.
 	const canvas_elem = document.getElementsByTagName('canvas')[0]
 
-
-/*---------------------------------------------------------------
+	/*---------------------------------------------------------------
 		UI
 	---------------------------------------------------------------*/
 
@@ -87,18 +56,23 @@ async function main() {
 	register_keyboard_action('h', () => debug_overlay.classList.toggle('hidden'))
 	
 	// Pause
-	let is_paused = false;
+	let is_paused = false
 	register_keyboard_action('p', () => is_paused = !is_paused);
 
+	// Pause
+	let vis_cubemap = true
+	register_keyboard_action('c', () => vis_cubemap = !vis_cubemap);
+
 	// mode
-	let render_mode = 'Normals'
+	let render_mode = 'Reflections'
 	create_choice_menu(
 		document.getElementById('menu-mode'),
-		['Normals', 'Gouraud', 'Phong'],
+		['Reflections', 'Shadows'],
 		(mode) => {
 			console.log('Set shading mode', mode)
 			render_mode = mode
 		},
+		true, // use url
 	)
 
 	// Predefined views
@@ -109,16 +83,19 @@ async function main() {
 	const set_predef_view_1 = () => {
 		is_paused = true
 
+		frame_info.sim_time = 1.
 		frame_info.cam_angle_z = -2.731681469282041
-		frame_info.cam_angle_y = -0.4785987755982989
-		frame_info.cam_distance_factor = 0.7938322410201695
+		frame_info.cam_angle_y = 
+		-0.4785987755982989
+		frame_info.cam_distance_factor = 1.4693280768000003
 		
-		mat4.set(frame_info.mat_turntable, 0.3985278716916164, -0.42238331447052535, 0.8141055651092455, 0, 0.9171562219627312, 0.18353636962060468, -0.3537497216133721, 0, 0, 0.8876411080405088, 0.4605358436827886, 0, 0, 0, -11.907483615302542, 1)
+		mat4.set(frame_info.mat_turntable, 0.3985278716916164, -0.42238331447052535, 0.8141055651092455, 0, 0.9171562219627312, 0.18353636962060468, -0.3537497216133721, 0, 0, 0.8876411080405088, 0.4605358436827886, 0, 0, 0, -22.039921152000005, 1)
 	}
 	register_keyboard_action('1', set_predef_view_1)
 	register_keyboard_action('2', () => {
 		is_paused = true
 
+		frame_info.sim_time = 2.
 		frame_info.cam_angle_z = -3.911681469282042
 		frame_info.cam_angle_y = -0.8785987755983002
 		frame_info.cam_distance_factor = 1.1664
@@ -126,7 +103,8 @@ async function main() {
 		mat4.set(frame_info.mat_turntable,-0.6961989976147306, -0.5526325769705245, 0.4581530209342307, 0, 0.7178488390463861, -0.5359655476314885, 0.4443354318888313, 0, 0, 0.6382304964689449, 0.7698453308145761, 0, 0, 0, -17.496000000000002, 1)
 	})
 	register_keyboard_action('3', () => {
-		
+
+		frame_info.sim_time = 3.
 		frame_info.cam_angle_z = -5.7766814692820505
 		frame_info.cam_angle_y = -1.0585987755983004
 		frame_info.cam_distance_factor = 1.
@@ -139,22 +117,26 @@ async function main() {
 	/*---------------------------------------------------------------
 		Scene and systems
 	---------------------------------------------------------------*/
+
+	// Resources and scene 
 	const resources = await load_resources(regl)	
 
+	const scenes = {
+		Reflections: create_scene_content_reflections(),
+		Shadows: create_scene_content_shadows(),
+	}
 
+	// Systems
 
+	const sys_render_unshaded = new SysRenderTextured(regl, resources)
+	sys_render_unshaded.check_scene(scenes.Reflections)
+	sys_render_unshaded.init()
 
+	const sys_render_mirror = new SysRenderMirror(regl, resources)
+	sys_render_mirror.init()
 
-	const scene_info = create_scene_content()
-
-	const sys_render_normals = new SysRenderNormals(regl, resources)
-	sys_render_normals.check_scene(scene_info)
-
-	const sys_render_gouraud = new SysRenderShadePervertex(regl, resources)
-	
-	const sys_render_phong = new SysRenderShadePerpixel(regl, resources)
-
-
+	const sys_render_light = new SysRenderMeshesWithLight(regl, resources)
+	sys_render_light.init()
 
 	/*---------------------------------------------------------------
 		Frame info
@@ -171,11 +153,6 @@ async function main() {
 
 		mat_view: mat4.create(),
 		mat_projection: mat4.create(),
-
-		// Consider the sun, which locates at [0, 0, 0], as the only light source
-		light_position_world: [10., 0.75, 10.],
-		light_position_cam: [0., 0., 0.],
-		light_color: [1.0, 0.941, 0.898],
 	}
 
 	/*---------------------------------------------------------------
@@ -186,31 +163,19 @@ async function main() {
 	function update_cam_transform(frame_info) {
 		const {cam_angle_z, cam_angle_y, cam_distance_factor} = frame_info
 
-		  /* TODO GL1.2.2
-		     Calculate the world-to-camera transformation matrix for turntable camera.
-		     The camera orbits the scene 
-		     * cam_distance_base * cam_distance_factor = distance of the camera from the (0, 0, 0) point
-		     * cam_angle_z - camera ray's angle around the Z axis
-		     * cam_angle_y - camera ray's angle around the Y axis
-		     */
+		/* TODO GL3.0
+		Copy turntable camera from GL2
+		*/
 
-      //distance drom the camera to origin
-      const r = cam_distance_base*cam_distance_factor
-      /*The eye vector defines the position of the camera, 
-        the at vector is the position where the camera is looking at
-        and the up vector specifies the up direction of the camera. */
- 
-      // Example camera matrix, looking along forward-X, edit this
-      const look_at = mat4.lookAt(mat4.create(), 
-                                  [-r, 0, 0],
-                                  [0, 0, 0], // view target point
-                                  [0, 0, 1], // up vector
-                                 )
-      // Store the combined transform in mat_turntable
-      const M_rot_z = mat4.fromZRotation(mat4.create(), cam_angle_z)
-      const M_rot_y = mat4.fromYRotation(mat4.create(), cam_angle_y)
-      //frame_info.mat_turntable = A * B * ...
-      mat4_matmul_many(frame_info.mat_turntable, look_at,M_rot_y, M_rot_z)
+		// Example camera matrix, looking along forward-X, edit this
+		const look_at = mat4.lookAt(mat4.create(), 
+			[-5, 0, 0], // camera position in world coord
+			[0, 0, 0], // view target point
+			[0, 0, 1], // up vector
+		)
+		// Store the combined transform in mat_turntable
+		// frame_info.mat_turntable = A * B * ...
+		mat4_matmul_many(frame_info.mat_turntable, look_at) // edit this
 	}
 
 	update_cam_transform(frame_info)
@@ -237,6 +202,7 @@ async function main() {
 	})
 
 	set_predef_view_1()
+	is_paused = false
 
 	/*---------------------------------------------------------------
 		Render loop
@@ -248,36 +214,58 @@ async function main() {
 
 		const {mat_view, mat_projection, mat_turntable, light_position_cam, light_position_world, camera_position} = frame_info
 
+		const scene_info = scenes[render_mode]
+
 		if (! is_paused) {
 			const dt = frame.time - prev_regl_time
-			scene_info.sim_time += dt
+			frame_info.sim_time += dt
 		}
-		frame_info.sim_time = scene_info.sim_time
-		prev_regl_time = frame.time;
+		scene_info.sim_time = frame_info.sim_time
+		prev_regl_time = frame.time
 
 		// Calculate view matrix, view centered on chosen planet
 		mat4.perspective(mat_projection, 
 			deg_to_rad * 60, // fov y
 			frame.framebufferWidth / frame.framebufferHeight, // aspect ratio
 			0.01, // near
-			100, // far
+			512, // far
 		)
 		mat4.copy(mat_view, mat_turntable)
 
 		// Calculate light position in camera frame
-		vec3.transformMat4(light_position_cam, light_position_world, mat_view)
+		//vec3.transformMat4(light_position_cam, light_position_world, mat_view)
 
 		// Set the whole image to black
 		regl.clear({color: [0, 0, 0, 1]});
 
-		if( render_mode === 'Normals' ) {
-			sys_render_normals.render(frame_info, scene_info)
-		} else if ( render_mode === 'Gouraud' ) {
-			sys_render_gouraud.render(frame_info, scene_info)
-		} else if ( render_mode === 'Phong' ) {
-			sys_render_phong.render(frame_info, scene_info)
-		}
+		sys_orbit(scene_info)
 
+		if(render_mode == 'Reflections') {
+			// We need to render the scene several times:
+			// to capture the cubemap, and to render the scene onto the screen
+			const render_scene_func = (frame_info, scene_info) => {
+				sys_render_unshaded.render(frame_info, scene_info)
+			}
+
+			// Draw scene to screen
+			render_scene_func(frame_info, scene_info)
+
+			// Reflections: draw reflecting objects
+			sys_render_mirror.render(frame_info, scene_info, render_scene_func)
+
+			// Reflections: visualize cubemap
+			if (vis_cubemap) {
+				sys_render_mirror.env_capture.visualize()
+			}
+
+		} else if (render_mode == 'Shadows') {
+
+			sys_render_light.render(frame_info, scene_info)
+
+			if(vis_cubemap) {
+				sys_render_light.env_capture.visualize()
+			}
+		}
 
 		debug_text.textContent = `
 `;

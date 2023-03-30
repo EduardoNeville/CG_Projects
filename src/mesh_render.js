@@ -1,123 +1,6 @@
 import {vec2, vec3, vec4, mat3, mat4} from "../lib/gl-matrix_3.3.0/esm/index.js"
 import {mat4_matmul_many} from "./icg_math.js"
-
-/*
-	Construct the scene!
-*/
-export function create_scene_content() {
-
-	const actors = [
-		{
-			translation: [-2., -2., 0.],
-			scale: [1., 1., 1.],
-					
-			mesh: 'vase1.obj',
-
-			material: {
-				color: [0.7, 0.5, 0.0],
-				shininess: 14.,
-			}
-		},
-		{
-			translation: [-1., 0., 0.],
-			scale: [1., 1., 2.],
-					
-			mesh: 'vase1.obj',
-
-			material: {
-				color: [0.7, 0.5, 0.0],
-				shininess: 14.,
-			}
-		},
-		{
-			translation: [-2., 2., 0.],
-			scale: [1., 1., 0.65],
-					
-			mesh: 'vase1.obj',
-
-			material: {
-				color: [0.7, 0.5, 0.0],
-				shininess: 14.,
-			}
-		},
-		{
-			translation: [0., 0., -1.],
-			scale: [3., 3., 3.],
-					
-			mesh: 'table.obj',
-
-			material: {
-				color: [0.6, 0.6, 0.6],
-				shininess: 2.,
-			}
-		},
-		{
-			translation: [2., -1., 0.],
-			scale: [0.6, 0.6, 0.8],
-					
-			mesh: 'cup2.obj',
-
-			material: {
-				color: [0.1, 0.5, 0.7],
-				shininess: 12.,
-			}
-		},
-		{
-			translation: [2.5, 1., 0.],
-			scale: [0.6, 0.6, 0.8],
-					
-			mesh: 'cup2.obj',
-
-			material: {
-				color: [0.1, 0.5, 0.7],
-				shininess: 12.,
-			}
-		},
-
-		{
-			translation: [0., 0., -0.75],
-			scale: [4., 4., 4.],
-				
-			mesh: 'shadow_scene__terrain.obj',
-
-			material: {
-				color: [0.4, 0.4, 0.4],
-				shininess: 6.,
-			}
-		},
-		{
-			translation: [0., 0., -0.75],
-			scale: [-4., -4., 4.],
-				
-			mesh: 'shadow_scene__wheel.obj',
-
-			material: {
-				color: [0.7, 0.15, 0.05],
-				shininess: 8.,
-			}
-		},
-
-	]
-
-	// In each planet, allocate its transformation matrix
-	for(const actor of actors) {
-		actor.mat_model_to_world = mat4.create()
-	}
-
-	// Lookup of actors by name
-	const actors_by_name = {}
-	for (const actor of actors) {
-		actors_by_name[actor.name] = actor
-	}
-
-	// Construct scene info
-	return {
-		sim_time: 0.,
-		actors: actors,
-		actors_by_name: actors_by_name,
-	}
-}
-
+import { EnvironmentCapture } from "./env_capture.js"
 
 /*
 	Draw meshes with a simple pipeline
@@ -125,6 +8,12 @@ export function create_scene_content() {
 */
 class SysRenderMeshes {
 	static shader_name = 'ENTER SHADER NAME'
+
+	constructor(regl, resources) {
+		// Keep a reference to textures
+		this.resources = resources
+		this.regl = regl
+	}
 
 	get_resource_checked(shader_name) {
 		const shader_text = this.resources[shader_name]
@@ -134,10 +23,8 @@ class SysRenderMeshes {
 		return shader_text
 	}
 
-	constructor(regl, resources) {
-		// Keep a reference to textures
-		this.resources = resources
-		this.init_pipeline(regl)
+	init() {
+		this.init_pipeline(this.regl)
 	}
 
 	pipeline_uniforms(regl) {
@@ -149,18 +36,22 @@ class SysRenderMeshes {
 			light_position: regl.prop('light_position'),
 			light_color: regl.prop('light_color'),
 
-			material_color: regl.prop('material.color'),
-			material_shininess: regl.prop('material.shininess'),
+			tex_color: regl.prop('material.texture'),
+			
+			color_factor: 1.,
 		}
 	}
 
 	init_pipeline(regl) {
 		const shader_name = this.constructor.shader_name
 
+		console.log('Compiling shaders: ', shader_name)
+
 		this.pipeline = regl({
 			attributes: {
 				vertex_position: regl.prop('mesh.vertex_positions'),
 				vertex_normal: regl.prop('mesh.vertex_normals'),
+				vertex_tex_coords: regl.prop('mesh.vertex_tex_coords'),
 			},
 			// Faces, as triplets of vertex indices
 			elements: regl.prop('mesh.faces'),
@@ -168,6 +59,8 @@ class SysRenderMeshes {
 			// Uniforms: global data available to the shader
 			uniforms: this.pipeline_uniforms(regl),	
 	
+			cull: {enable: true}, // don't draw back faces
+
 			vert: this.get_resource_checked(`${shader_name}.vert.glsl`),
 			frag: this.get_resource_checked(`${shader_name}.frag.glsl`),
 		})
@@ -176,8 +69,29 @@ class SysRenderMeshes {
 	check_scene(scene_info) {
 		// check if all meshes are loaded
 		for( const actor of scene_info.actors ) {
-			this.get_resource_checked(actor.mesh)
+			if(actor.mesh) {
+				this.get_resource_checked(actor.material.texture)
+			}
 		}
+	}
+
+	make_transformation_matrices(frame_info, actor) {
+		const {mat_projection, mat_view} = frame_info
+
+		// Construct mat_model_to_world from translation and sclae
+		// If we wanted to have a rotation too, we'd use mat4.fromRotationTranslationScale
+		mat4.fromScaling(actor.mat_model_to_world, actor.scale)
+		mat4.translate(actor.mat_model_to_world, actor.mat_model_to_world, actor.translation)
+		
+		const mat_model_view = mat4.create()
+		const mat_mvp = mat4.create()
+		const mat_normals_to_view = mat3.create()
+		mat3.identity(mat_normals_to_view)
+
+		/* #TODO GL3.0 Copy mat_model_view, mat_mvp, mat_normals_to_view from GL2.2.2*/
+		// calculate mat_model_view, mat_mvp, mat_normals_to_view 
+
+		return {mat_model_view, mat_mvp, mat_normals_to_view}
 	}
 
 	render(frame_info, scene_info) {
@@ -194,31 +108,12 @@ class SysRenderMeshes {
 		// For each planet, construct information needed to draw it using the pipeline
 		for( const actor of scene_info.actors ) {
 
-			// Construct mat_model_to_world from translation and sclae
-			// If we wanted to have a rotation too, we'd use mat4.fromRotationTranslationScale
-			mat4.fromScaling(actor.mat_model_to_world, actor.scale)
-			mat4.translate(actor.mat_model_to_world, actor.mat_model_to_world, actor.translation)
-			
-			const mat_model_view = mat4.create()
-			const mat_mvp = mat4.create()
-			const mat_normals_to_view = mat3.create()
-			mat3.identity(mat_normals_to_view)
+			// skip objects with reflections
+			if(!actor.mesh || actor.material.mirror) {
+				continue
+			}
 
-			/* #TODO GL2.2.2 
-				Calculate mat_mvp like in previous exercise
-				Calculate mat_normals_to_view to be equal to 
-					inverse(transpose( mat model * mat view))
-			*/
-			//mat4_matmul_many(mat_model_view, ...)
-			//mat4_matmul_many(mat_mvp, ...)
-			  // calculate mat_normals_to_view
-
-        mat4_matmul_many(mat_model_view, mat_view, actor.mat_model_to_world)
-        mat4_matmul_many(mat_mvp, mat_projection, mat_model_view)
-        mat3.fromMat4(mat_normals_to_view, mat_model_view)
-        mat3.transpose(mat_normals_to_view, mat_normals_to_view)
-        mat3.invert(mat_normals_to_view, mat_normals_to_view)
-
+			const {mat_model_view, mat_mvp, mat_normals_to_view} = this.make_transformation_matrices(frame_info, actor)
 
 			entries_to_draw.push({
 				mesh: this.resources[actor.mesh],
@@ -229,7 +124,9 @@ class SysRenderMeshes {
 				light_position: light_position_cam,
 				light_color: light_color,
 
-				material: actor.material,
+				material: {
+					texture: this.resources[actor.material.texture],
+				},
 			})
 		}
 
@@ -238,18 +135,236 @@ class SysRenderMeshes {
 	}
 }
 
-
-export class SysRenderNormals extends SysRenderMeshes {
-	static shader_name = 'normals'
+export class SysRenderTextured extends SysRenderMeshes {
+	static shader_name = 'unshaded'
 }
 
-export class SysRenderShadePervertex extends SysRenderMeshes {
-	static shader_name = 'shade_pervertex'
+export class SysRenderMirror extends SysRenderMeshes {
+	static shader_name = 'mirror'
+
+	constructor(regl, resources) {
+		super(regl, resources)
+
+	}
+
+	init() {
+		this.env_capture = new EnvironmentCapture(this.regl, this.resources)
+
+		super.init()
+	}
+
+	pipeline_uniforms(regl) {
+		return {
+			mat_mvp: regl.prop('mat_mvp'),
+			mat_model_view: regl.prop('mat_model_view'),
+			mat_normals_to_view: regl.prop('mat_normals_to_view'),
+
+			tex_color: regl.prop('material.texture'),
+			cube_env_map: this.env_capture.env_cubemap,
+		}
+	}
+
+	render(frame_info, scene_info, render_scene_func) {
+		const {mat_projection, mat_view, light_position_cam, light_color} = frame_info
+		
+		for( const actor of scene_info.actors ) {
+			// skip objects with no reflections
+			if(!actor.mesh || !actor.material.mirror) {
+				continue
+			}
+			
+			const {mat_model_view, mat_mvp, mat_normals_to_view} = this.make_transformation_matrices(frame_info, actor)
+
+			// capture the environment from this actor's point of view
+			this.env_capture.capture_scene_cubemap(frame_info, scene_info, actor.translation, render_scene_func)
+
+			this.pipeline({
+				mesh: this.resources[actor.mesh],
+				mat_mvp: mat_mvp,
+				mat_model_view: mat_model_view,
+				mat_normals_to_view: mat_normals_to_view,
+
+				material: {
+					texture: this.resources[actor.material.texture],
+				},
+			})
+		}
+
+		// Draw on the GPU
+	}
 }
 
-export class SysRenderShadePerpixel extends SysRenderMeshes {
-	static shader_name = 'shade_perpixel'
+
+export class SysRenderMeshesWithLight extends SysRenderMeshes {
+	static shader_name = 'unshaded'
+
+	init() {
+		this.env_capture = new EnvironmentCapture(this.regl, this.resources)
+		this.env_capture.visualization_color_factor = 0.05
+
+		super.init()
+	}
+
+	pipeline_uniforms(regl) {
+		return {
+			mat_mvp: regl.prop('mat_mvp'),
+			mat_model_view: regl.prop('mat_model_view'),
+			mat_normals_to_view: regl.prop('mat_normals_to_view'),
+
+			light_position: regl.prop('light_position'),
+			light_color: regl.prop('light_color'),
+
+			tex_color: regl.prop('material.texture'),
+			cube_shadowmap: this.env_capture.env_cubemap,
+
+			color_factor: 0.1, // ambient component
+		}
+	}
+
+	init_pipeline(regl) {
+		super.init_pipeline(regl) // init the ambient pass
+
+		let shader_name = 'phong_shadow'
+		console.log('Compiling shader', shader_name)
+		this.pipeline_phong_contribution = regl({
+			attributes: {
+				vertex_position: regl.prop('mesh.vertex_positions'),
+				vertex_normal: regl.prop('mesh.vertex_normals'),
+				vertex_tex_coords: regl.prop('mesh.vertex_tex_coords'),
+			},
+			// Faces, as triplets of vertex indices
+			elements: regl.prop('mesh.faces'),
+	
+			// Uniforms: global data available to the shader
+			uniforms: this.pipeline_uniforms(regl),	
+	
+			cull: {enable: true}, // don't draw back faces
+
+			// blend mode
+			// The depth buffer needs to be filled before calling this pipeline,
+			// otherwise our additive blending mode can accumulate contributions
+			// from fragments that should be invisible.
+			// (The depth buffer is filled by the ambient pass.)
+			depth: {
+				enable: true,
+				mask: true,
+				func: '<=',
+			},
+
+			/* #TODO GL3.3.2
+				change the blend options
+			*/
+			blend: {
+			},
+			
+
+			vert: this.get_resource_checked(`${shader_name}.vert.glsl`),
+			frag: this.get_resource_checked(`${shader_name}.frag.glsl`),
+		})
+
+
+		this.pipeline_shadowmap = regl({
+			attributes: {
+				vertex_position: regl.prop('mesh.vertex_positions'),
+			},
+			// Faces, as triplets of vertex indices
+			elements: regl.prop('mesh.faces'),
+	
+			// Uniforms: global data available to the shader
+			uniforms: {
+				mat_mvp: regl.prop('mat_mvp'),
+				mat_model_view: regl.prop('mat_model_view'),
+			},
+	
+			cull: {enable: true}, // don't draw back faces
+
+			vert: this.get_resource_checked(`shadowmap_gen.vert.glsl`),
+			frag: this.get_resource_checked(`shadowmap_gen.frag.glsl`),
+		})
+			
+	}
+
+	render_shadowmap(frame_info, scene_info) {
+
+		const entries_to_draw = []
+
+		for( const actor of scene_info.actors ) {
+
+			// skip objects with no mesh or no reflections
+			if(!actor.mesh || actor.material.mirror) {
+				continue
+			}
+
+			const {mat_model_view, mat_mvp, mat_normals_to_view} = this.make_transformation_matrices(frame_info, actor)
+
+			entries_to_draw.push({
+				mesh: this.resources[actor.mesh],
+				mat_mvp: mat_mvp,
+				mat_model_view: mat_model_view,
+			})
+		}
+
+		this.pipeline_shadowmap(entries_to_draw)
+	}
+
+	render_light_contributions(frame_info, scene_info, light_position_cam, light_color) {
+		const entries_to_draw = []
+
+		// Read frame info
+
+		// For each planet, construct information needed to draw it using the pipeline
+		for( const actor of scene_info.actors ) {
+
+			// skip objects with reflections
+			if(!actor.mesh || actor.material.mirror) {
+				continue
+			}
+
+			const {mat_model_view, mat_mvp, mat_normals_to_view} = this.make_transformation_matrices(frame_info, actor)
+
+			entries_to_draw.push({
+				mesh: this.resources[actor.mesh],
+				mat_mvp: mat_mvp,
+				mat_model_view: mat_model_view,
+				mat_normals_to_view: mat_normals_to_view,
+
+				light_position: light_position_cam,
+				light_color: light_color,
+
+				material: {
+					texture: this.resources[actor.material.texture],
+				},
+			})
+		}
+
+		// Draw on the GPU
+		this.pipeline_phong_contribution(entries_to_draw)
+	}
+
+	render(frame_info, scene_info) {
+		const {mat_projection, mat_view} = frame_info
+		
+		// draw ambient pass without shading
+		super.render(frame_info, scene_info)
+
+		for( const light_actor of scene_info.actors ) {
+			// skip objects with no light
+			if(! light_actor.light) {
+				continue
+			}
+
+			// capture the shadowmap from this actor's point of view
+			this.env_capture.capture_scene_cubemap(frame_info, scene_info, light_actor.translation, (frame_info, scene_info) => {
+				this.render_shadowmap(frame_info, scene_info)
+			})
+
+			const light_position_cam = vec3.transformMat4([0., 0., 0.], light_actor.translation, mat_view)
+			const light_color = vec3.scale([0, 0, 0], light_actor.light.color, light_actor.light.intensity)
+
+			this.render_light_contributions(frame_info, scene_info, light_position_cam, light_color)
+		}
+
+		// Draw on the GPU
+	}
 }
-
-
 
