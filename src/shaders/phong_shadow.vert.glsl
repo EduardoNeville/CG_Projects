@@ -7,9 +7,14 @@ attribute vec2 vertex_tex_coords;
 // Per-vertex outputs passed on to the fragment shader
 
 /* #TODO GL3.3.1: Pass on the normals and fragment position in camera coordinates */
+<<<<<<< HEAD
 varying vec3 v2f_normal;
 varying vec3 v2f_dir_to_light;
 varying vec3 v2f_dir_from_view;
+=======
+varying vec3 norm_cam;
+varying vec3 frag_pos_cam; 
+>>>>>>> b8ee2bfe81338b14263b66e7c302d814715d22d9
 varying vec2 v2f_uv;
 
 // Global variables specified in "uniforms" entry of the pipeline
@@ -35,6 +40,7 @@ void main() {
 	// vertex position in camera coordinates
 	// transform normal to camera coordinates
 
+<<<<<<< HEAD
         vec3 vertex_view_pos = vec3(mat_model_view * vec4(vertex_position, 1));
 	// viewing vector (from camera to vertex in view coordinates), camera is at vec3(0, 0, 0) in cam coords
 	v2f_dir_from_view = vertex_view_pos;
@@ -42,6 +48,14 @@ void main() {
         v2f_dir_to_light = light_position - vertex_view_pos;
         // transform normal to camera coordinates
 	v2f_normal = mat_normals_to_view * vertex_normal;
+=======
+	//Compute the vertex position, normal and light_position in camera space
+	norm_cam = vec3(mat_model_view*vec4(vertex_position,1));
+	frag_pos_cam = vec3(mat_model_view*vec4(vertex_normal,0));
+	//vec4 cam_direction = normalize(vec4(0, 0, 0, 1) - vertex_position_cam);
+
+
+>>>>>>> b8ee2bfe81338b14263b66e7c302d814715d22d9
 	
 	gl_Position = mat_mvp*vec4(vertex_position, 1);
 
