@@ -84,8 +84,8 @@ void main() {
 
 	color = material_ambient*light_color*material_color + light_color *  (mat_d_dot + mat_s_dot);
 	gl_Position = mat_mvp * vec4(vertex_position, 1);*/
-	float m_a = 0.1,
-	float dist_frag_light = vec3.squaredDistance(frag_pos_cam,light_position);
+	float m_a = 0.1;
+	
 	vec3 eye_dir = normalize(vec3(0, 0, 0) - frag_pos_cam);
 
 	vec3 n_light_dir = normalize(light_position - frag_pos_cam);
@@ -114,6 +114,6 @@ void main() {
 	}
 
 
-	vec3 color = light_color * m_a + light_color *  (mat_d_dot + mat_s_dot) * (1./pow(dist_frag_light,2));
+	vec3 color = light_color * m_a + light_color *  (mat_d_dot + mat_s_dot) * 1./pow(distance(frag_pos_cam,light_position),2.);
 	gl_FragColor = vec4(color, 1.); // output: RGBA in 0..1 range
 }
