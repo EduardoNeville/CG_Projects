@@ -18,7 +18,7 @@ void main() {
 	/* #TODO GL3.1.1
 	Sample texture tex_color at UV coordinates and display the resulting color.
 	*/
-	vec3 material_color = vec3(v2f_uv, 0.);
+        vec3 material_color = texture2D(tex_color, v2f_uv).rgb;
 	
 	/*
 	#TODO GL3.3.1: Blinn-Phong with shadows and attenuation
