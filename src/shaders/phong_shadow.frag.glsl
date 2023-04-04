@@ -1,8 +1,9 @@
 precision highp float; 
 
 /* #TODO GL3.3.1: Pass on the normals and fragment position in camera coordinates */
-varying vec3 norm_cam;
-varying vec3 frag_pos_cam;
+varying vec3 v2f_normal;
+varying vec3 v2f_position_view;
+
 varying vec2 v2f_uv;
 
 
@@ -18,7 +19,7 @@ void main() {
 	/* #TODO GL3.1.1
 	Sample texture tex_color at UV coordinates and display the resulting color.
 	*/
-        vec3 material_color = texture2D(tex_color, v2f_uv).rgb;
+    vec3 material_color = texture2D(tex_color, v2f_uv).rgb;
 	
 	/*
 	#TODO GL3.3.1: Blinn-Phong with shadows and attenuation
@@ -51,69 +52,28 @@ void main() {
 	Make sure to normalize values which may have been affected by interpolation!
 	*/
 
-	/*vec4 vertex_position_view = mat_model_view*vec4(vertex_position,1);
-	vec4 vertex_normal_view = vec4(mat_normals_to_view*vertex_normal,0);
-	vec4 eye_dir = normalize(vec4(0, 0, 0, 1) - vertex_position_view);
-	vec4 light_position_d4 = vec4(light_position,1);
-
-	vec4 n_light_dir = normalize(light_position_d4 - vertex_position_view);
-	vec4 n_obj_norm = normalize(vertex_normal_view);
-
-	float dot_n_l = dot(n_obj_norm, n_light_dir);
-
-	vec3 mat_d_dot = material_color * dot_n_l;
-
-	if (dot_n_l <= 0.) {
-		mat_d_dot = vec3(0.);
-	} 
-
-	float spec_dot = 0.;
-	// check in light to negative
-	vec4 reflected_light = reflect(-n_light_dir, n_obj_norm);
-	//vec4 n_dir_cam = vec4(eye_position;
-
-	vec4 half_vec = normalize(eye_dir + n_light_dir);
-	
-	spec_dot = dot(half_vec, n_obj_norm);
-	
-	vec3 mat_s_dot = material_color * pow(spec_dot, material_shininess);
-
-	if (dot_n_l <= 0. || spec_dot <= 0.){
-		mat_s_dot = vec3(0.);
-	}
-
-	color = material_ambient*light_color*material_color + light_color *  (mat_d_dot + mat_s_dot);
-	gl_Position = mat_mvp * vec4(vertex_position, 1);*/
 	float m_a = 0.1;
 	
-	vec3 eye_dir = normalize(vec3(0, 0, 0) - frag_pos_cam);
-
-	vec3 n_light_dir = normalize(light_position - frag_pos_cam);
-	vec3 n_obj_norm = normalize(norm_cam);
-
-	float dot_n_l = dot(n_obj_norm, n_light_dir);
-
-	vec3 mat_d_dot = material_color * dot_n_l;
-
-	if (dot_n_l <= 0.) {
-		mat_d_dot = vec3(0.);
-	} 
-
-	float spec_dot = 0.;
-	// check in light to negative
-	vec3 reflected_light = reflect(-n_light_dir, n_obj_norm);
-
-	vec3 half_vec = normalize(eye_dir + n_light_dir);
+	vec3 color = material_color * light_color * m_a;
 	
-	spec_dot = dot(half_vec, n_obj_norm);
+	vec3 n_v2f_normal = normalize(v2f_normal);
+	vec3 n_v2f_dir_to_light = normalize(light_position - v2f_position_view);
+	vec3 n_v2f_dir_from_view = normalize(v2f_position_view);
+	float dist_light_pos = distance(v2f_position_view,light_position);
+	float diffuse = dot(n_v2f_normal, n_v2f_dir_to_light);
+	float z_buffer = distance(textureCube(cube_shadowmap,-n_v2f_dir_to_light),vec4(0.,0.,0.,0));
 	
-	vec3 mat_s_dot = material_color * pow(spec_dot, material_shininess);
-
-	if (dot_n_l <= 0. || spec_dot <= 0.){
-		mat_s_dot = vec3(0.);
+	if (z_buffer>dist_light_pos){
+		if (diffuse > 0.) {
+			vec3 n_half_vec = normalize(-n_v2f_dir_from_view + n_v2f_dir_to_light);
+			float diff_spec = diffuse;
+			if (dot(n_v2f_normal, n_half_vec) > 0.) {
+				diff_spec += pow(dot(n_half_vec, n_v2f_normal), material_shininess);
+			}
+			color += light_color * material_color * diff_spec * 1./pow(dist_light_pos,2.);
+		}
 	}
-
-
-	vec3 color = light_color * m_a + light_color *  (mat_d_dot + mat_s_dot) * 1./pow(distance(frag_pos_cam,light_position),2.);
+	
 	gl_FragColor = vec4(color, 1.); // output: RGBA in 0..1 range
+	
 }
