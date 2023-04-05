@@ -51,19 +51,17 @@ void main() {
 
 	Make sure to normalize values which may have been affected by interpolation!
 	*/
-
-	float m_a = 0.1;
 	
-	vec3 color = material_color * light_color * m_a;
+        vec3 color = vec3(0);
 	
 	vec3 n_v2f_normal = normalize(v2f_normal);
 	vec3 n_v2f_dir_to_light = normalize(light_position - v2f_position_view);
 	vec3 n_v2f_dir_from_view = normalize(v2f_position_view);
 	float dist_light_pos = distance(v2f_position_view,light_position);
 	float diffuse = dot(n_v2f_normal, n_v2f_dir_to_light);
-	float z_buffer = distance(textureCube(cube_shadowmap,-n_v2f_dir_to_light),vec4(0.,0.,0.,0));
+	float z_buffer = textureCube(cube_shadowmap,-n_v2f_dir_to_light).x;
 	
-	if (z_buffer>dist_light_pos){
+	if (z_buffer*1.01>dist_light_pos){
 		if (diffuse > 0.) {
 			vec3 n_half_vec = normalize(-n_v2f_dir_from_view + n_v2f_dir_to_light);
 			float diff_spec = diffuse;
