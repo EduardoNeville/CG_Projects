@@ -96,15 +96,15 @@ float perlin_fbm_1d(float x) {
 	
 	Note: the GLSL `for` loop may be useful.
 	*/
-	float fbm=0.;
+	float fbm_1d=0.;
 	float ampl_multiplier_pow = 1.;
 	float freq_multiplier_pow = 1.;
 	for(int i=0; i<num_octaves;i++){
-		fbm += ampl_multiplier_pow*perlin_noise_1d(x*freq_multiplier_pow);
+		fbm_1d += ampl_multiplier_pow*perlin_noise_1d(x*freq_multiplier_pow);
 		ampl_multiplier_pow *= ampl_multiplier;
 		freq_multiplier_pow *= freq_multiplier;
 	}
-	return fbm;
+	return fbm_1d;
 }
 
 // ----- plotting -----
@@ -203,7 +203,15 @@ float perlin_fbm(vec2 point) {
 	Implement 2D fBm as described in the handout. Like in the 1D case, you
 	should use the constants num_octaves, freq_multiplier, and ampl_multiplier. 
 	*/
-	return 0.;
+	float fbm_2d = 0.;
+	float ampl_multiplier_pow = 1.;
+	float freq_multiplier_pow = 1.;
+	for(int i=0; i<num_octaves;i++){
+		fbm_2d += ampl_multiplier_pow*perlin_noise(point*freq_multiplier_pow);
+		ampl_multiplier_pow *= ampl_multiplier;
+		freq_multiplier_pow *= freq_multiplier;
+	}
+	return fbm_2d;
 }
 
 vec3 tex_fbm(vec2 point) {
@@ -227,7 +235,15 @@ float turbulence(vec2 point) {
 	Implement the 2D turbulence function as described in the handout.
 	Again, you should use num_octaves, freq_multiplier, and ampl_multiplier.
 	*/
-	return 0.;
+	float fbm_2d = 0.;
+	float ampl_multiplier_pow = 1.;
+	float freq_multiplier_pow = 1.;
+	for(int i=0; i<num_octaves;i++){
+		fbm_2d += ampl_multiplier_pow*abs(perlin_noise(point*freq_multiplier_pow));
+		ampl_multiplier_pow *= ampl_multiplier;
+		freq_multiplier_pow *= freq_multiplier;
+	}
+	return fbm_2d;
 }
 
 vec3 tex_turbulence(vec2 point) {
@@ -249,7 +265,13 @@ vec3 tex_map(vec2 point) {
 	Implement your map texture evaluation routine as described in the handout. 
 	You will need to use your perlin_fbm routine and the terrain color constants described above.
 	*/
-	return vec3(0.);
+	vec3 color = vec3(0.);
+	float s = perlin_fbm(point);
+	color = (s-terrain_color_water)*(terrain_color_grass+terrain_color_mountain);
+	if (s<terrain_water_level){
+		color = terrain_color_water;
+	}
+	return color;
 }
 
 // ==============================================================
@@ -263,6 +285,8 @@ vec3 tex_wood(vec2 point) {
 	Implement your wood texture evaluation routine as described in thE handout. 
 	You will need to use your 2d turbulence routine and the wood color constants described above.
 	*/
+	float alpha = 0.5*(1.+sin(100.*length(point)+0.15*turbulence(point)));
+	
 	return vec3(0.);
 }
 
