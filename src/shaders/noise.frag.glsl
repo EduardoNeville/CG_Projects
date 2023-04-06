@@ -160,32 +160,33 @@ float perlin_noise(vec2 point) {
 
         // Find the two grid points that surround x
 
-        float c00 = floor(point.x);
-        float c01 = c00 + 1.0;
-        float c10 = floor(point.y);
-        float c11 = c10 + 1.0;
+        float cwest = floor(point.x);
+        float ceast = cwest + 1.0;
+        float csouth = floor(point.y);
+        float cnorth = csouth + 1.0;
 
         // Look up the gradients at the grid points
-        vec2 g00 = gradients(hash_func(vec2(c00, c10)));
-        vec2 g01 = gradients(hash_func(vec2(c01, c10)));
-        vec2 g10 = gradients(hash_func(vec2(c00, c11)));
-        vec2 g11 = gradients(hash_func(vec2(c01, c11)));
+        vec2 g00 = gradients(hash_func(vec2(cwest, csouth)));
+        vec2 g01 = gradients(hash_func(vec2(ceast, csouth)));
+        vec2 g10 = gradients(hash_func(vec2(cwest, cnorth)));
+        vec2 g11 = gradients(hash_func(vec2(ceast, cnorth)));
 
         // Calculate the contributiotns of each corner
-        float v00 = dot(g00.x , (point.x - c00)) + dot(g00.y , (point.y - c10));
-        float v01 = dot(g01.x , (point.x - c01)) + dot(g01.y , (point.y - c10));
-        float v10 = dot(g10.x , (point.x - c00)) + dot(g10.y , (point.y - c11));
-        float v11 = dot(g11.x , (point.x - c01)) + dot(g11.y , (point.y - c11));
+        float s = dot(g00 , vec2(point.x - cwest, point.y -csouth));  // vec2 is a 
+        float t = dot(g01 , vec2(point.x - ceast, point.y - csouth)); // vec2 is b 
+        float u = dot(g10 , vec2(point.x - cwest, point.y - cnorth)); // vec2 is c
+        float v = dot(g11 , vec2(point.x - ceast, point.y - cnorth)); // vec2 is d
 
         // Interpolate the contributions
+        float f_x = blending_weight_poly(point.x - cwest);
+        float f_y = blending_weight_poly(point.y - csouth);
 
-        float t = blending_weight_poly(point.x - c00);
-        float u = blending_weight_poly(point.y - c10);
+        float st = mix(s, t, f_x);
+        float uv = mix(u, v, f_x);
+        float noise = mix(st, uv, f_y);
 
-        float v0 = mix(v00, v01, t);
-        float v1 = mix(v10, v11, t);
 
-	return 0.;
+	return noise;
 }
 
 vec3 tex_perlin(vec2 point) {
