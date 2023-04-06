@@ -295,14 +295,42 @@ vec3 tex_wood(vec2 point) {
 // ==============================================================
 // Procedural "marble" texture
 
-const vec3 white 			= vec3(0.95, 0.95, 0.95);
+const vec3 white = vec3(0.95, 0.95, 0.95);
 
+const vec3 green = vec3(0.52, 0.85, 0.62);
+
+const vec3 celeste = vec3(0.69, 0.99, 0.99);
 vec3 tex_marble(vec2 point) {
 	/* #TODO PG1.5.1.3
 	Implement your marble texture evaluation routine as described in the handout.
 	You will need to use your 2d fbm routine and the marble color constants described above.
 	*/
-	return vec3(0.);
+
+        vec2 q = vec2(perlin_fbm(point), perlin_fbm(point + vec2(1.7, 4.6))); 
+        float alpha = 0.5 * (1.0 + perlin_fbm(point + q));
+
+
+        vec3 color = white * alpha;
+
+        /*
+        // Second marble layer
+        */
+        vec2 r = vec2(perlin_fbm(point + 4.0*q + vec2(1.7,9.2)),
+                      perlin_fbm(point + 4.0*q + vec2(8.3,2.8)));
+
+        float beta = 0.5 * (1.0 + perlin_fbm(point + 4.0*r));
+        vec3 color2 = white * beta;
+
+        /*
+        
+        Other colours we tried for fun 
+
+        vec3 green_color = green * beta;
+        vec3 celeste_color = celeste * alpha;
+        
+        */
+
+	return color2;
 }
 
 
