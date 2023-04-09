@@ -4,9 +4,9 @@ attribute vec3 normal;
 varying float v2f_height;
 
 /* #TODO PG1.6.1: Copy Blinn-Phong shader setup from previous exercises */
-//varying ...
-//varying ...
-//varying ...
+varying vec3 v2f_normal;
+varying vec3 v2f_dir_to_light;
+varying vec3 v2f_dir_from_view;
 
 uniform mat4 mat_mvp;
 uniform mat4 mat_model_view;
@@ -26,8 +26,14 @@ void main()
     Hint: Compute the vertex position, normal and light_position in eye space.
     Hint: Write the final vertex position to gl_Position
     */
-	// Setup Blinn-Phong varying variables
-	//v2f_normal = normal; // TODO apply normal transformation
-	
-	gl_Position = mat_mvp * position_v4;
+    // Setup Blinn-Phong varying variables
+    vec4 vertex_view_pos = mat_model_view * position_v4;
+    // viewing vector (from camera to vertex in view coordinates), camera is at vec3(0, 0, 0) in cam coords
+    v2f_dir_from_view = vec3(vertex_view_pos);
+    // direction to light source
+    v2f_dir_to_light = vec3(light_position - vertex_view_pos);
+    // transform normal to camera coordinates
+    v2f_normal = mat_normals * normal;
+
+    gl_Position = mat_mvp * position_v4;
 }
