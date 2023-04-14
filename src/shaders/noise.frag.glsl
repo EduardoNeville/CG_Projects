@@ -266,13 +266,15 @@ vec3 tex_map(vec2 point) {
 	Implement your map texture evaluation routine as described in the handout. 
 	You will need to use your perlin_fbm routine and the terrain color constants described above.
 	*/
-	vec3 color = vec3(0.);
-	float s = perlin_fbm(point);
-	color = (s-terrain_color_water)*(terrain_color_grass+terrain_color_mountain);
-	if (s<terrain_water_level){
-		color = terrain_color_water;
-	}
-	return color;
+        float alpha = perlin_fbm(point);
+        vec3 color;
+        if(alpha < terrain_water_level){
+                color = terrain_color_water;
+        }else {
+                float alpha = (alpha - terrain_water_level) / (1.0 - terrain_water_level);
+                color = mix(terrain_color_grass, terrain_color_mountain, alpha);
+        }
+        return color;
 }
 
 // ==============================================================
@@ -288,7 +290,8 @@ vec3 tex_wood(vec2 point) {
 	*/
 	float alpha = 0.5*(1.+sin(100.*length(point)+0.15*turbulence(point)));
 	
-	return vec3(0.);
+        vec3 color = mix(brown_dark, brown_light, alpha);
+	return color; 
 }
 
 
