@@ -288,7 +288,7 @@ vec3 tex_wood(vec2 point) {
 	Implement your wood texture evaluation routine as described in thE handout. 
 	You will need to use your 2d turbulence routine and the wood color constants described above.
 	*/
-	float alpha = 0.5*(1.+sin(100.*length(point)+0.15*turbulence(point)));
+	float alpha = 0.5*(1.+sin(100.*(length(point)+0.15*turbulence(point))));
 	
         vec3 color = mix(brown_dark, brown_light, alpha);
 	return color; 
@@ -310,7 +310,7 @@ vec3 tex_marble(vec2 point) {
 	*/
 
         vec2 q = vec2(perlin_fbm(point), perlin_fbm(point + vec2(1.7, 4.6))); 
-        float alpha = 0.5 * (1.0 + perlin_fbm(point + q));
+        float alpha = 0.5 * (1.0 + perlin_fbm(point + 4.*q));
 
 
         vec3 color = white * alpha;
@@ -332,6 +332,8 @@ vec3 tex_marble(vec2 point) {
         vec3 celeste_color = celeste * alpha;
         
         */
+
+        color2 = mix(white, brown_dark, alpha);
 
 	return color2;
 }
