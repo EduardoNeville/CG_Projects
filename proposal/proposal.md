@@ -67,3 +67,8 @@ Particle system:
     - [https://nullprogram.com/blog/2014/06/29/](https://nullprogram.com/blog/2014/06/29/)  
     - [https://webglfundamentals.org/webgl/lessons/webgl-qna-efficient-particle-system-in-javascript---webgl-.html](https://webglfundamentals.org/webgl/lessons/webgl-qna-efficient-particle-system-in-javascript---webgl-.html)  
 
+Procedural generation:
+    - Texturing & Modeling: A Procedural Approach
+
+
+
