@@ -70,5 +70,7 @@ Particle system:
 Procedural generation:
     - Texturing & Modeling: A Procedural Approach
 
+Water 2D:
+    - [https://gamedev.stackexchange.com/questions/44547/how-do-i-create-2d-water-with-dynamic-waves](https://gamedev.stackexchange.com/questions/44547/how-do-i-create-2d-water-with-dynamic-waves)
 
 
