@@ -63,4 +63,7 @@ In addition, we'll try to remodel the terrain such that on impact the asteroid i
 
 # Resources
 
-List your dependencies...
+Particle system:  
+    - [https://nullprogram.com/blog/2014/06/29/](https://nullprogram.com/blog/2014/06/29/)  
+    - [https://webglfundamentals.org/webgl/lessons/webgl-qna-efficient-particle-system-in-javascript---webgl-.html](https://webglfundamentals.org/webgl/lessons/webgl-qna-efficient-particle-system-in-javascript---webgl-.html)  
+
