@@ -67,10 +67,10 @@ Particle system:
     - [https://nullprogram.com/blog/2014/06/29/](https://nullprogram.com/blog/2014/06/29/)  
     - [https://webglfundamentals.org/webgl/lessons/webgl-qna-efficient-particle-system-in-javascript---webgl-.html](https://webglfundamentals.org/webgl/lessons/webgl-qna-efficient-particle-system-in-javascript---webgl-.html)  
 
-Procedural generation:
+Procedural generation:  
     - Texturing & Modeling: A Procedural Approach
 
-Water 2D:
+Water 2D:  
     - [https://gamedev.stackexchange.com/questions/44547/how-do-i-create-2d-water-with-dynamic-waves](https://gamedev.stackexchange.com/questions/44547/how-do-i-create-2d-water-with-dynamic-waves)
 
 
