@@ -65,7 +65,6 @@ async function main() {
 	const resources = {};
 
 	[
-		"noise.frag.glsl",
 		"display.vert.glsl",
 
 		"terrain.vert.glsl",
