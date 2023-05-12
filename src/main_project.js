@@ -6,6 +6,7 @@ import {deg_to_rad, mat4_to_string, vec_to_string, mat4_matmul_many} from "./icg
 
 import {init_noise} from "./noise.js"
 import {init_terrain} from "./terrain.js"
+import {init_particle} from "./particle.js"
 
 
 async function main() {
@@ -74,6 +75,9 @@ async function main() {
 
 		"buffer_to_screen.vert.glsl",
 		"buffer_to_screen.frag.glsl",
+
+    "particle_glow.vert.glsl",
+		"particle_glow.frag.glsl",
 
 	].forEach((shader_filename) => {
 		resources[`shaders/${shader_filename}`] = load_text(`./src/shaders/${shader_filename}`)
@@ -176,10 +180,19 @@ async function main() {
 		}
 	})()
 
-	texture_fbm.draw_texture_to_buffer({width: 96, height: 96, mouse_offset: [-12.24, 8.15]})
+	texture_fbm.draw_texture_to_buffer({width: 192, height: 192, mouse_offset: [-5.24, 8.15]})
 
 	const terrain_actor = init_terrain(regl, resources, texture_fbm.get_buffer())
 
+  const particles = []
+  
+  particles.push(init_particle(regl, resources, {
+    size: 0.1,
+    type: "glow",
+    position: [0., 0., 0.5],
+    velocity: [0., 0., -0.05],
+  }));
+  
 	/*
 		UI
 	*/
@@ -200,6 +213,12 @@ async function main() {
 	activate_preset_view()
 	register_button_with_hotkey('btn-preset-view', '1', activate_preset_view)
 
+  let is_paused = false;
+	let sim_time = 0;
+	let prev_regl_time = 0;
+  
+	register_keyboard_action('p', () => is_paused = !is_paused);
+
 	/*---------------------------------------------------------------
 		Frame render
 	---------------------------------------------------------------*/
@@ -210,40 +229,56 @@ async function main() {
 	//let light_position_world = [1, -1, 1., 1.0]
 
 	const light_position_cam = [0, 0, 0, 0]
+  const camera_position = [0,0,0]
 
 	regl.frame((frame) => {
-		if(update_needed) {
-			update_needed = false // do this *before* running the drawing code so we don't keep updating if drawing throws an error.
-
-			mat4.perspective(mat_projection,
-				deg_to_rad * 60, // fov y
-				frame.framebufferWidth / frame.framebufferHeight, // aspect ratio
-				0.01, // near
-				100, // far
-			)
-
-			mat4.copy(mat_view, mat_turntable)
-
-			// Calculate light position in camera frame
-			vec4.transformMat4(light_position_cam, light_position_world, mat_view)
-
-			const scene_info = {
-				mat_view:        mat_view,
-				mat_projection:  mat_projection,
-				light_position_cam: light_position_cam,
-			}
-
-			// Set the whole image to black
-			regl.clear({color: [0.9, 0.9, 1., 1]})
-
-			terrain_actor.draw(scene_info)
+		if (! is_paused) {
+			const dt = frame.time - prev_regl_time;
+			sim_time += dt;
+		}
+		prev_regl_time = frame.time;
+    
+		mat4.perspective(mat_projection,
+				             deg_to_rad * 60, // fov y
+				             frame.framebufferWidth / frame.framebufferHeight, // aspect ratio
+				             0.01, // near
+				             100, // far
+			              )
+    
+		mat4.copy(mat_view, mat_turntable)
+    
+		// Calculate light position in camera frame
+		vec4.transformMat4(light_position_cam, light_position_world, mat_view)
+    
+		const mat_camera_to_world = mat4.invert(mat4.create(), mat_view);
+    
+		mat4.getTranslation(camera_position, mat_camera_to_world);
+    
+    
+		const scene_info = {
+      sim_time:            sim_time,
+			mat_view:            mat_view,
+			mat_projection:      mat_projection,
+			light_position_cam:  light_position_cam,
+      camera_position:     camera_position,
+		}
+    
+		// Set the whole image to black
+		regl.clear({color: [0.9, 0.9, 1., 1]})
+    
+		terrain_actor.draw(scene_info)
+    
+    for (const particle of particles) {
+      particle.calculate_model_matrix(scene_info)
+      console.log(particle.mat_model_to_world);
+      particle.draw(scene_info)
 		}
 
-// 		debug_text.textContent = `
-// Hello! Sim time is ${sim_time.toFixed(2)} s
-// Camera: angle_z ${(cam_angle_z / deg_to_rad).toFixed(1)}, angle_y ${(cam_angle_y / deg_to_rad).toFixed(1)}, distance ${(cam_distance_factor*cam_distance_base).toFixed(1)}
-// `
-	})
+    // 		debug_text.textContent = `
+    // Hello! Sim time is ${sim_time.toFixed(2)} s
+    // Camera: angle_z ${(cam_angle_z / deg_to_rad).toFixed(1)}, angle_y ${(cam_angle_y / deg_to_rad).toFixed(1)}, distance ${(cam_distance_factor*cam_distance_base).toFixed(1)}
+    // `
+  })
 }
 
 DOM_loaded_promise.then(main)
