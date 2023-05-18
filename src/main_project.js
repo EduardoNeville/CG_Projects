@@ -6,7 +6,7 @@ import {deg_to_rad, mat4_to_string, vec_to_string, mat4_matmul_many} from "./icg
 
 import {init_noise} from "./noise.js"
 import {init_terrain} from "./terrain.js"
-import {init_particle} from "./particle.js"
+import {init_particle_system} from "./particle_emitter.js"
 
 
 async function main() {
@@ -79,6 +79,9 @@ async function main() {
     "particle_glow.vert.glsl",
 		"particle_glow.frag.glsl",
 
+    "particle_perlin.vert.glsl",
+		"particle_perlin.frag.glsl",
+
 	].forEach((shader_filename) => {
 		resources[`shaders/${shader_filename}`] = load_text(`./src/shaders/${shader_filename}`)
 	});
@@ -124,8 +127,9 @@ async function main() {
     // Store the combined transform in mat_turntable
     const M_rot_z = mat4.fromZRotation(mat4.create(), cam_angle_z)
     const M_rot_y = mat4.fromYRotation(mat4.create(), cam_angle_y)
+    const M_trans = mat4.fromTranslation(mat4.create(), cam_target)
     //frame_info.mat_turntable = A * B * ...
-    mat4_matmul_many(mat_turntable, look_at,M_rot_y, M_rot_z)
+    mat4_matmul_many(mat_turntable, look_at,M_rot_y, M_rot_z, M_trans)
   }
 
 	update_cam_transform()
@@ -171,6 +175,19 @@ async function main() {
 
 	const noise_textures = init_noise(regl, resources)
 
+  noise_textures.forEach((texture) => {
+    if (['perlin'].includes(texture.name.toLowerCase())) {
+      texture.draw_texture_to_buffer({width: 192, height: 192, mouse_offset: [0, 0]});
+      resources[`noise/${texture.name.toLowerCase()}`] = regl.texture({
+        x: 0,
+        y: 0,
+        width: texture.get_buffer().width,
+        height: texture.get_buffer().height,
+        copy: true
+      });
+    }
+  });
+
 	const texture_fbm = (() => {
 		for(const t of noise_textures) {
 			//if(t.name === 'FBM') {
@@ -186,13 +203,30 @@ async function main() {
 
   const particles = []
   
-  particles.push(init_particle(regl, resources, {
-    size: 0.1,
+  particles.push(init_particle_system(regl, resources, {
+    size: 0.01,
     type: "glow",
     position: [0., 0., 0.5],
-    velocity: [0., 0., -0.05],
+    velocity: [0., 0., -0.1],
+    count: 7000,
+    initial_count: 10,
+    frequency: 0.0001,
+    lifetime: 3,
+    rand_scale: 0.03,
   }));
-  
+
+  particles.push(init_particle_system(regl, resources, {
+    size: 0.01,
+    type: "perlin",
+    position: [0., 0., 0.5],
+    velocity: [0., 0., -0.1],
+    count: 7000,
+    initial_count: 10,
+    frequency: 0.0001,
+    lifetime: 3,
+    rand_scale: 0.03,
+  }));
+
 	/*
 		UI
 	*/
@@ -215,6 +249,7 @@ async function main() {
 
   let is_paused = false;
 	let sim_time = 0;
+  let delta = 0;
 	let prev_regl_time = 0;
   
 	register_keyboard_action('p', () => is_paused = !is_paused);
@@ -233,8 +268,8 @@ async function main() {
 
 	regl.frame((frame) => {
 		if (! is_paused) {
-			const dt = frame.time - prev_regl_time;
-			sim_time += dt;
+			delta = frame.time - prev_regl_time;
+			sim_time += delta;
 		}
 		prev_regl_time = frame.time;
     
@@ -257,6 +292,7 @@ async function main() {
     
 		const scene_info = {
       sim_time:            sim_time,
+      delta_time:          delta,
 			mat_view:            mat_view,
 			mat_projection:      mat_projection,
 			light_position_cam:  light_position_cam,
@@ -270,7 +306,6 @@ async function main() {
     
     for (const particle of particles) {
       particle.calculate_model_matrix(scene_info)
-      console.log(particle.mat_model_to_world);
       particle.draw(scene_info)
 		}
 

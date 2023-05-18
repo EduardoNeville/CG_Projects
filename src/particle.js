@@ -22,6 +22,10 @@ function cached_pipeline(key, construction_func) {
 export function init_particle(regl, resources, options) {
   class BillboardActor {
 	  init_pipeline(regl, resources, name) {
+      let uniforms = {mat_mvp: regl.prop('mat_mvp')};
+      if (`noise/${name}` in resources) {
+        uniforms['noise_tex'] = resources[`noise/${name}`];
+      }
 		  this.pipeline = cached_pipeline(`particle_${name}`, () => regl({
 			  // Vertex attributes
 			  attributes: {
@@ -40,15 +44,15 @@ export function init_particle(regl, resources, options) {
 				  [0, 2, 3], // bottom left
 			  ],
         
-			  uniforms: {
-				  mat_mvp: regl.prop('mat_mvp'),
-			  },
+			  uniforms: uniforms,
         
 			  vert: resources[`shaders/particle_${name}.vert.glsl`],
 			  frag: resources[`shaders/particle_${name}.frag.glsl`],
+
+        depth: {enable: false},
         
 			  blend : {
-          enable: true,
+          enable: false,
           func: {
             srcRGB: 'src alpha',
             srcAlpha: 1,
@@ -64,7 +68,7 @@ export function init_particle(regl, resources, options) {
 		  }));
 	  }
     
-	  constructor({size, type, position, velocity, ...rest}, regl, resources) {
+	  constructor({size, type, position, velocity, rand_scale, sim_time, ...rest}, regl, resources) {
 		  this.mat_model_to_world = mat4.create();
 		  this.mat_mvp = mat4.create();
       
@@ -76,12 +80,21 @@ export function init_particle(regl, resources, options) {
       if (velocity === undefined) {
         this.velocity = [0,0,0];
       } else {
-        this.velocity = velocity;
+        this.velocity = vec3.clone(velocity);
 	    }
+
+      if (rand_scale !== undefined) {
+        vec3.add(this.velocity, this.velocity, vec3.random([0,0,0], rand_scale));
+      }
+      
+      this.age = 0;
+      this.last_sim_time = sim_time === undefined ? 0 : sim_time;
     }
     
 	  calculate_model_matrix({camera_position, sim_time}) {
-    
+      this.age += sim_time - this.last_sim_time;
+      this.last_sim_time = sim_time;
+
       const M_tmp = mat4.create();
       
       mat4.identity(this.mat_model_to_world);
@@ -101,7 +114,7 @@ export function init_particle(regl, resources, options) {
       mat4.multiply(this.mat_model_to_world, this.mat_model_to_world, M_tmp);
       mat4.multiply(this.mat_model_to_world, this.mat_scale, this.mat_model_to_world);
 
-      const position = vec3.add([0,0,0], this.position, vec3.scale([0,0,0], this.velocity, sim_time));
+      const position = vec3.add([0,0,0], this.position, vec3.scale([0,0,0], this.velocity, this.age));
       const pos_mat = mat4.fromTranslation([0,0,0], position);
       
       mat4.multiply(this.mat_model_to_world, pos_mat, this.mat_model_to_world);
