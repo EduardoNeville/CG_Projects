@@ -10,6 +10,12 @@ title: Asteriod Impact
 
 Simulating an asteroid impact on a terrain. 
 
+# Milestone report
+
+We have almost finished the core goals (Drawing billboards (a surface always facing the camera)  
+Shader of fire / smoke / cloud, based on noise (this shader is applied to the billboards) are done).  
+For next week we plan to complete the core tasks and decide on which extension we will work on.
+
 # Goals and Deliverables
 
 ![Impact](images/asteroid_impact1.jpg)
@@ -59,7 +65,6 @@ Such as making part of the asteriod be able to disintegrate as it enteres the at
 Adding cosmetic effects such as clouds and trees are also part of our idea
 
 In addition, we'll try to remodel the terrain such that on impact the asteroid is able to create a crater in the ground.
-
 
 # Resources
 
