@@ -130,8 +130,8 @@ export class SysRenderPlanetsUnshaded {
 				texture_base_color: regl.prop('tex_base_color'),
 			},	
 	
-			vert: resources['unshaded.vert.glsl'],
-			frag: resources['unshaded.frag.glsl'],
+			vert: resources['asteroid.vert.glsl'],
+			frag: resources['asteroid.frag.glsl'],
 		})
 
 		// Keep a reference to textures
