@@ -79,8 +79,8 @@ async function main() {
     "particle_glow.vert.glsl",
 		"particle_glow.frag.glsl",
 
-    "particle_perlin.vert.glsl",
-		"particle_perlin.frag.glsl",
+    "particle_default.vert.glsl",
+		"particle_default.frag.glsl",
 
 	].forEach((shader_filename) => {
 		resources[`shaders/${shader_filename}`] = load_text(`./src/shaders/${shader_filename}`)
@@ -178,13 +178,18 @@ async function main() {
   noise_textures.forEach((texture) => {
     if (['perlin'].includes(texture.name.toLowerCase())) {
       texture.draw_texture_to_buffer({width: 192, height: 192, mouse_offset: [0, 0]});
-      resources[`noise/${texture.name.toLowerCase()}`] = regl.texture({
+      // From an image element
+      var image = new Image();
+      image.src = 'src/noise/turbulence.png';
+      var imageTexture = regl.texture(image);
+      resources[`noise/${texture.name.toLowerCase()}`] = imageTexture;
+        /*regl.texture({
         x: 0,
         y: 0,
         width: texture.get_buffer().width,
         height: texture.get_buffer().height,
         copy: true
-      });
+      });*/
     }
   });
 
@@ -203,28 +208,28 @@ async function main() {
 
   const particles = []
   
-  particles.push(init_particle_system(regl, resources, {
+/*  particles.push(init_particle_system(regl, resources, {
     size: 0.01,
     type: "glow",
     position: [0., 0., 0.5],
     velocity: [0., 0., -0.1],
-    count: 7000,
+    count: 100,
     initial_count: 10,
-    frequency: 0.0001,
+    frequency: 0.01,
     lifetime: 3,
     rand_scale: 0.03,
-  }));
+  }));*/
 
   particles.push(init_particle_system(regl, resources, {
-    size: 0.01,
+    size: 0.001,
     type: "perlin",
-    position: [0., 0., 0.5],
-    velocity: [0., 0., -0.1],
+    position: [0., 0., 0.],
+    velocity: [0., 0., 0.005],
     count: 7000,
     initial_count: 10,
-    frequency: 0.0001,
-    lifetime: 3,
-    rand_scale: 0.03,
+    frequency: 0.001,
+    lifetime: 2.,
+    rand_scale: 0.003,
   }));
 
 	/*
@@ -271,6 +276,7 @@ async function main() {
 			delta = frame.time - prev_regl_time;
 			sim_time += delta;
 		}
+    if (delta < 0.001) return;
 		prev_regl_time = frame.time;
     
 		mat4.perspective(mat_projection,

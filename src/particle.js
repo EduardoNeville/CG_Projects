@@ -21,10 +21,13 @@ function cached_pipeline(key, construction_func) {
 
 export function init_particle(regl, resources, options) {
   class BillboardActor {
-	  init_pipeline(regl, resources, name) {
-      let uniforms = {mat_mvp: regl.prop('mat_mvp')};
+	  init_pipeline(regl, resources, name, custom_shader) {
+      let uniforms = {mat_mvp: regl.prop('mat_mvp'), color: regl.prop('color')};
       if (`noise/${name}` in resources) {
         uniforms['noise_tex'] = resources[`noise/${name}`];
+        if (!custom_shader) {
+          name = "default";
+        }
       }
 		  this.pipeline = cached_pipeline(`particle_${name}`, () => regl({
 			  // Vertex attributes
@@ -52,7 +55,7 @@ export function init_particle(regl, resources, options) {
         depth: {enable: false},
         
 			  blend : {
-          enable: false,
+          enable: true,
           func: {
             srcRGB: 'src alpha',
             srcAlpha: 1,
@@ -68,13 +71,16 @@ export function init_particle(regl, resources, options) {
 		  }));
 	  }
     
-	  constructor({size, type, position, velocity, rand_scale, sim_time, ...rest}, regl, resources) {
+	  constructor({size, type, position, velocity, rand_scale, sim_time, lifetime, custom_shader, ...rest}, regl, resources) {
 		  this.mat_model_to_world = mat4.create();
 		  this.mat_mvp = mat4.create();
       
-		  this.init_pipeline(regl, resources, type);
+		  this.init_pipeline(regl, resources, type, custom_shader);
       
 		  this.size = size;
+      this.color = vec4.create();
+      this.start_color = [1., 0., 0., 1.];
+      this.end_color = [1., 1., 0., 0.6];
 		  this.mat_scale = mat4.fromScaling(mat4.create(), [this.size, this.size, this.size]);
       this.position = position;
       if (velocity === undefined) {
@@ -88,16 +94,34 @@ export function init_particle(regl, resources, options) {
       }
       
       this.age = 0;
+      this.lifetime = lifetime;
       this.last_sim_time = sim_time === undefined ? 0 : sim_time;
+    }
+
+    reset({size, type, position, velocity, rand_scale, sim_time, lifetime, custom_shader, ...rest}) {
+      this.position = position;
+      if (velocity === undefined) {
+        this.velocity = [0,0,0];
+      } else {
+        this.velocity = vec3.clone(velocity);
+	    }
+
+      if (rand_scale !== undefined) {
+        vec3.add(this.velocity, this.velocity, vec3.random([0,0,0], rand_scale));
+      }
+      
+      this.age = 0;
+      this.last_sim_time = sim_time === undefined ? 0 : sim_time;      
     }
     
 	  calculate_model_matrix({camera_position, sim_time}) {
       this.age += sim_time - this.last_sim_time;
       this.last_sim_time = sim_time;
 
+      const percent = this.age / this.lifetime;
+      vec4.lerp(this.color, this.start_color, this.end_color, percent);
+
       const M_tmp = mat4.create();
-      
-      mat4.identity(this.mat_model_to_world);
       
       const new_normal = vec3.normalize([0., 0., 0.], camera_position);
       const normal_xy = vec3.normalize([0.,0.,0.], vec3.subtract([0.,0.,0.], new_normal, vec3.scale([0.,0.,0.], [0.,0.,1.], vec3.dot([0.,0.,1.], new_normal))));
@@ -125,6 +149,7 @@ export function init_particle(regl, resources, options) {
       
 		  this.pipeline({
 			  mat_mvp: this.mat_mvp,
+        color: this.color,
 		  });
 	  }
   }

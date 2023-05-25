@@ -3,7 +3,7 @@ import {init_particle} from "./particle.js";
 export function init_particle_system(regl, resources, options) {
   class ParticleSystemActor {
     constructor(options, regl, resources) {
-      const {size, type, position, velocity, initial_count, count, frequency, lifetime} = options;
+      const {size, type, position, velocity, initial_count, count, frequency, lifetime, custom_shader} = options;
       this.size = size;
       this.type = type;
       this.position = position;
@@ -36,7 +36,7 @@ export function init_particle_system(regl, resources, options) {
         if (this.particles[index].age > this.lifetime) {
           if (frame.sim_time - this.last_spawn > this.frequency) {
             this.last_spawn = frame.sim_time;
-            this.particles[index] = init_particle(this.regl, this.resources, this.options);
+            this.particles[index].reset(this.options);
           } else {
             this.particles.splice(index, 1);
             --index;

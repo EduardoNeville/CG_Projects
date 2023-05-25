@@ -8,6 +8,6 @@ attribute vec3 position;
 uniform mat4 mat_mvp;
 
 void main() {
-	v2f_tex_coord = position.xy;
+	v2f_tex_coord = 0.5 * (vec2(1., 1.) + position.xy);
 	gl_Position = mat_mvp * vec4(position, 1);
 }
