@@ -180,7 +180,7 @@ async function main() {
       texture.draw_texture_to_buffer({width: 192, height: 192, mouse_offset: [0, 0]});
       // From an image element
       var image = new Image();
-      image.src = 'src/noise/turbulence.png';
+      image.src = 'src/noise/particle.png';
       var imageTexture = regl.texture(image);
       resources[`noise/${texture.name.toLowerCase()}`] = imageTexture;
         /*regl.texture({
@@ -221,15 +221,34 @@ async function main() {
   }));*/
 
   particles.push(init_particle_system(regl, resources, {
-    size: 0.001,
+    size: 0.01,
     type: "perlin",
-    position: [0., 0., 0.],
-    velocity: [0., 0., 0.005],
-    count: 7000,
+    position: [0., 0., 0.5],
+    velocity: [0., 0., 0.1],
+    system_velocity: [0., 0., -0.1],
+    count: 5000,
     initial_count: 10,
     frequency: 0.001,
+    spawn_count: 2,
     lifetime: 2.,
-    rand_scale: 0.003,
+    rand_scale: 0.03,
+    start_color: [0.5, 0.5, 0.5, 1.0],
+    end_color: [0.9, 0.9, 0.9, 0.],
+  }));
+  particles.push(init_particle_system(regl, resources, {
+    size: 0.03,
+    type: "perlin",
+    position: [0., 0., 0.5],
+    velocity: [0., 0., 0.1],
+    system_velocity: [0., 0., -0.1],
+    count: 5000,
+    initial_count: 10,
+    frequency: 0.001,
+    spawn_count: 2,
+    lifetime: 2.,
+    rand_scale: 0.03,
+    start_color: [0.5, 0.5, 0.5, 1.0],
+    end_color: [0.9, 0.9, 0.9, 0.],
   }));
 
 	/*
@@ -276,7 +295,6 @@ async function main() {
 			delta = frame.time - prev_regl_time;
 			sim_time += delta;
 		}
-    if (delta < 0.001) return;
 		prev_regl_time = frame.time;
     
 		mat4.perspective(mat_projection,

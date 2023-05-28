@@ -52,15 +52,15 @@ export function init_particle(regl, resources, options) {
 			  vert: resources[`shaders/particle_${name}.vert.glsl`],
 			  frag: resources[`shaders/particle_${name}.frag.glsl`],
 
-        depth: {enable: false},
+        depth: {enable: true},
         
 			  blend : {
           enable: true,
           func: {
             srcRGB: 'src alpha',
-            srcAlpha: 1,
+            srcAlpha: 'src alpha',
             dstRGB: 'one minus src alpha',
-            dstAlpha: 1
+            dstAlpha: 'one minus src alpha'
           },
           equation: {
             rgb: 'add',
@@ -71,7 +71,7 @@ export function init_particle(regl, resources, options) {
 		  }));
 	  }
     
-	  constructor({size, type, position, velocity, rand_scale, sim_time, lifetime, custom_shader, ...rest}, regl, resources) {
+	  constructor({size, type, position, velocity, rand_scale, sim_time, lifetime, custom_shader, start_color, end_color, ...rest}, regl, resources) {
 		  this.mat_model_to_world = mat4.create();
 		  this.mat_mvp = mat4.create();
       
@@ -79,9 +79,10 @@ export function init_particle(regl, resources, options) {
       
 		  this.size = size;
       this.color = vec4.create();
-      this.start_color = [1., 0., 0., 1.];
-      this.end_color = [1., 1., 0., 0.6];
+      this.start_color = start_color;
+      this.end_color = end_color;
 		  this.mat_scale = mat4.fromScaling(mat4.create(), [this.size, this.size, this.size]);
+      this.offset = [0,0,0];
       this.position = position;
       if (velocity === undefined) {
         this.velocity = [0,0,0];
@@ -90,6 +91,7 @@ export function init_particle(regl, resources, options) {
 	    }
 
       if (rand_scale !== undefined) {
+        vec3.add(this.offset, this.offset, vec3.random([0,0,0], rand_scale));
         vec3.add(this.velocity, this.velocity, vec3.random([0,0,0], rand_scale));
       }
       
@@ -99,7 +101,7 @@ export function init_particle(regl, resources, options) {
     }
 
     reset({size, type, position, velocity, rand_scale, sim_time, lifetime, custom_shader, ...rest}) {
-      this.position = position;
+      this.offset = [0,0,0];
       if (velocity === undefined) {
         this.velocity = [0,0,0];
       } else {
@@ -107,6 +109,7 @@ export function init_particle(regl, resources, options) {
 	    }
 
       if (rand_scale !== undefined) {
+        vec3.add(this.offset, this.offset, vec3.random([0,0,0], rand_scale));
         vec3.add(this.velocity, this.velocity, vec3.random([0,0,0], rand_scale));
       }
       
@@ -122,7 +125,10 @@ export function init_particle(regl, resources, options) {
       vec4.lerp(this.color, this.start_color, this.end_color, percent);
 
       const M_tmp = mat4.create();
-      
+
+      const position = vec3.add([0,0,0], vec3.add([0,0,0], this.position, this.offset), vec3.scale([0,0,0], this.velocity, this.age));
+
+//      const new_normal = vec3.normalize([0., 0., 0.], vec3.subtract([0.,0.,0.], camera_position, position));
       const new_normal = vec3.normalize([0., 0., 0.], camera_position);
       const normal_xy = vec3.normalize([0.,0.,0.], vec3.subtract([0.,0.,0.], new_normal, vec3.scale([0.,0.,0.], [0.,0.,1.], vec3.dot([0.,0.,1.], new_normal))));
       let angle = Math.acos(vec3.dot([0., 1., 0.,], normal_xy));
@@ -138,7 +144,6 @@ export function init_particle(regl, resources, options) {
       mat4.multiply(this.mat_model_to_world, this.mat_model_to_world, M_tmp);
       mat4.multiply(this.mat_model_to_world, this.mat_scale, this.mat_model_to_world);
 
-      const position = vec3.add([0,0,0], this.position, vec3.scale([0,0,0], this.velocity, this.age));
       const pos_mat = mat4.fromTranslation([0,0,0], position);
       
       mat4.multiply(this.mat_model_to_world, pos_mat, this.mat_model_to_world);
