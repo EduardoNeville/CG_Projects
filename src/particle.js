@@ -71,7 +71,7 @@ export function init_particle(regl, resources, options) {
 		  }));
 	  }
     
-	  constructor({size, type, position, velocity, rand_scale, sim_time, lifetime, custom_shader, start_color, end_color, ...rest}, regl, resources) {
+	  constructor({size, type, position, velocity, rand_pos, rand_velocity, sim_time, lifetime, custom_shader, start_color, end_color, ...rest}, regl, resources) {
 		  this.mat_model_to_world = mat4.create();
 		  this.mat_mvp = mat4.create();
       
@@ -90,9 +90,11 @@ export function init_particle(regl, resources, options) {
         this.velocity = vec3.clone(velocity);
 	    }
 
-      if (rand_scale !== undefined) {
-        vec3.add(this.offset, this.offset, vec3.random([0,0,0], rand_scale));
-        vec3.add(this.velocity, this.velocity, vec3.random([0,0,0], rand_scale));
+      if (rand_pos !== undefined) {
+        vec3.add(this.offset, this.offset, vec3.random([0,0,0], rand_pos));
+      }
+      if (rand_velocity !== undefined) {
+        vec3.add(this.velocity, this.velocity, vec3.random([0,0,0], rand_velocity));
       }
       
       this.age = 0;
@@ -100,7 +102,7 @@ export function init_particle(regl, resources, options) {
       this.last_sim_time = sim_time === undefined ? 0 : sim_time;
     }
 
-    reset({size, type, position, velocity, rand_scale, sim_time, lifetime, custom_shader, ...rest}) {
+    reset({size, type, position, velocity, rand_pos, rand_velocity, sim_time, lifetime, custom_shader}) {
       this.offset = [0,0,0];
       if (velocity === undefined) {
         this.velocity = [0,0,0];
@@ -108,9 +110,11 @@ export function init_particle(regl, resources, options) {
         this.velocity = vec3.clone(velocity);
 	    }
 
-      if (rand_scale !== undefined) {
-        vec3.add(this.offset, this.offset, vec3.random([0,0,0], rand_scale));
-        vec3.add(this.velocity, this.velocity, vec3.random([0,0,0], rand_scale));
+      if (rand_pos !== undefined) {
+        vec3.add(this.offset, this.offset, vec3.random([0,0,0], rand_pos));
+      }
+      if (rand_velocity !== undefined) {
+        vec3.add(this.velocity, this.velocity, vec3.random([0,0,0], rand_velocity));
       }
       
       this.age = 0;

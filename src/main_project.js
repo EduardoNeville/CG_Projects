@@ -1,12 +1,14 @@
 import {createREGL} from "../lib/regljs_2.1.0/regl.module.js"
 import {vec2, vec3, vec4, mat2, mat3, mat4} from "../lib/gl-matrix_3.3.0/esm/index.js"
 
-import {DOM_loaded_promise, load_text, register_button_with_hotkey, register_keyboard_action} from "./icg_web.js"
+import {DOM_loaded_promise, load_text, load_texture, register_button_with_hotkey, register_keyboard_action} from "./icg_web.js"
 import {deg_to_rad, mat4_to_string, vec_to_string, mat4_matmul_many} from "./icg_math.js"
+import {icg_mesh_make_uv_sphere} from "./icg_mesh.js"
 
 import {init_noise} from "./noise.js"
 import {init_terrain} from "./terrain.js"
 import {init_particle_system} from "./particle_emitter.js"
+import {init_asteroid} from "./asteroid.js"
 
 
 async function main() {
@@ -76,6 +78,12 @@ async function main() {
 		"buffer_to_screen.vert.glsl",
 		"buffer_to_screen.frag.glsl",
 
+    "asteroid.vert.glsl",
+    "asteroid.frag.glsl",
+
+    "unshaded.vert.glsl",
+    "unshaded.frag.glsl",
+
     "particle_glow.vert.glsl",
 		"particle_glow.frag.glsl",
 
@@ -83,13 +91,22 @@ async function main() {
 		"particle_default.frag.glsl",
 
 	].forEach((shader_filename) => {
-		resources[`shaders/${shader_filename}`] = load_text(`./src/shaders/${shader_filename}`)
+		resources[`shaders/${shader_filename}`] = load_text(`./src/shaders/${shader_filename}`);
 	});
+
+  resources[`noise/perlin`] = load_texture(regl, 'src/noise/fbm_zoomed.png');
+  resources['tex/moonColor.jpeg'] = load_texture(regl, 'textures/moonColor.jpeg');
+
 
 	// Wait for all downloads to complete
 	for (const key of Object.keys(resources)) {
-		resources[key] = await resources[key]
+		resources[key] = await resources[key];
 	}
+
+  // Construct a unit sphere mesh
+	// UV sphere https://docs.blender.org/manual/en/latest/modeling/meshes/primitives.html#uv-sphere
+	// we create it in code instead of loading from a file
+	resources['mesh_uvsphere'] = icg_mesh_make_uv_sphere(15);
 
 
 	/*---------------------------------------------------------------
@@ -177,12 +194,7 @@ async function main() {
 
   noise_textures.forEach((texture) => {
     if (['perlin'].includes(texture.name.toLowerCase())) {
-      texture.draw_texture_to_buffer({width: 192, height: 192, mouse_offset: [0, 0]});
-      // From an image element
-      var image = new Image();
-      image.src = 'src/noise/particle.png';
-      var imageTexture = regl.texture(image);
-      resources[`noise/${texture.name.toLowerCase()}`] = imageTexture;
+//      texture.draw_texture_to_buffer({width: 192, height: 192, mouse_offset: [0, 0]});
         /*regl.texture({
         x: 0,
         y: 0,
@@ -205,7 +217,14 @@ async function main() {
 	texture_fbm.draw_texture_to_buffer({width: 192, height: 192, mouse_offset: [-5.24, 8.15]})
 
 	const terrain_actor = init_terrain(regl, resources, texture_fbm.get_buffer())
-
+  const asteroid_actor = init_asteroid(regl, resources, {
+    size: 0.1,
+    start_point: [.5, .5, .5],
+    end_point: [0., 0., 0.],
+    speed: 0.0001,
+    texture_name: "moonColor.jpeg",
+  });
+  
   const particles = []
   
 /*  particles.push(init_particle_system(regl, resources, {
@@ -220,36 +239,57 @@ async function main() {
     rand_scale: 0.03,
   }));*/
 
-  particles.push(init_particle_system(regl, resources, {
+/*  particles.push(init_particle_system(regl, resources, {
     size: 0.01,
     type: "perlin",
-    position: [0., 0., 0.5],
-    velocity: [0., 0., 0.1],
-    system_velocity: [0., 0., -0.1],
+    position: asteroid_actor.position,
+    velocity: [0.2, 0.2, 0.2],
+    system_velocity: [0., 0., 0.],
     count: 5000,
     initial_count: 10,
     frequency: 0.001,
-    spawn_count: 2,
-    lifetime: 2.,
-    rand_scale: 0.03,
+    spawn_count: 10,
+    lifetime: 1.5,
+    rand_pos: 0.1,
+    rand_velocity: 0.03,
     start_color: [0.5, 0.5, 0.5, 1.0],
-    end_color: [0.9, 0.9, 0.9, 0.],
-  }));
-  particles.push(init_particle_system(regl, resources, {
-    size: 0.03,
+    end_color: [0.9, 0.9, 0.9, 0.5],
+    }));*/
+  
+/*  particles.push(init_particle_system(regl, resources, {
+    size: 0.05,
     type: "perlin",
-    position: [0., 0., 0.5],
-    velocity: [0., 0., 0.1],
-    system_velocity: [0., 0., -0.1],
+    position: asteroid_actor.position,
+    velocity: [0.1, 0.1, 0.1],
+    system_velocity: [0., 0., 0.],
     count: 5000,
     initial_count: 10,
     frequency: 0.001,
-    spawn_count: 2,
-    lifetime: 2.,
-    rand_scale: 0.03,
-    start_color: [0.5, 0.5, 0.5, 1.0],
-    end_color: [0.9, 0.9, 0.9, 0.],
+    spawn_count: 5,
+    lifetime: 1.5,
+    rand_pos: 0.05,
+    rand_velocity: 0.03,
+    start_color: [0.2, 0.2, 0.2, 1.0],
+    end_color: [0.9, 0.9, 0.9, 0.5],
+    }));*/
+
+  particles.push(init_particle_system(regl, resources, {
+    size: 0.05,
+    type: "perlin",
+    position: asteroid_actor.position,
+    velocity: [0.2, 0.2, 0.2],
+    system_velocity: [0., 0., 0.],
+    count: 10000,
+    initial_count: 10,
+    frequency: 0.0001,
+    spawn_count: 50,
+    lifetime: 1.5,
+    rand_pos: 0.11,
+    rand_velocity: 0.05,
+    start_color: [1., 0., 0., 1.0],
+    end_color: [1., 1., 0., 0.5],
   }));
+  
 
 	/*
 		UI
@@ -326,7 +366,10 @@ async function main() {
 		// Set the whole image to black
 		regl.clear({color: [0.9, 0.9, 1., 1]})
     
-		terrain_actor.draw(scene_info)
+		terrain_actor.draw(scene_info);
+
+    asteroid_actor.calculate_model_matrix(scene_info);
+    asteroid_actor.draw(scene_info);
     
     for (const particle of particles) {
       particle.calculate_model_matrix(scene_info)
