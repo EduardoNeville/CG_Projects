@@ -94,7 +94,12 @@ async function main() {
 		resources[`shaders/${shader_filename}`] = load_text(`./src/shaders/${shader_filename}`);
 	});
 
-  resources[`noise/perlin`] = load_texture(regl, 'src/noise/fbm_zoomed.png');
+  
+  resources[`noise/perlin`] = load_texture(regl, 'src/noise/perlin.png');
+  resources[`noise/fbm`] = load_texture(regl, 'src/noise/fbm.png');
+  resources[`noise/fbm_zoomed`] = load_texture(regl, 'src/noise/fbm_zoomed.png');
+  resources[`noise/turbulence`] = load_texture(regl, 'src/noise/turbulence.png');
+  resources[`noise/particle`] = load_texture(regl, 'src/noise/particle.png');
   resources['tex/moonColor.jpeg'] = load_texture(regl, 'textures/moonColor.jpeg');
 
 
@@ -184,26 +189,13 @@ async function main() {
 		event.preventDefault() // don't scroll the page too...
 		update_cam_transform()
 		update_needed = true
-	})
+	}, {passive: false})
 
 	/*---------------------------------------------------------------
 		Actors
 	---------------------------------------------------------------*/
 
 	const noise_textures = init_noise(regl, resources)
-
-  noise_textures.forEach((texture) => {
-    if (['perlin'].includes(texture.name.toLowerCase())) {
-//      texture.draw_texture_to_buffer({width: 192, height: 192, mouse_offset: [0, 0]});
-        /*regl.texture({
-        x: 0,
-        y: 0,
-        width: texture.get_buffer().width,
-        height: texture.get_buffer().height,
-        copy: true
-      });*/
-    }
-  });
 
 	const texture_fbm = (() => {
 		for(const t of noise_textures) {
@@ -221,7 +213,7 @@ async function main() {
     size: 0.1,
     start_point: [.5, .5, .5],
     end_point: [0., 0., 0.],
-    speed: 0.0001,
+    speed: 0.1,
     texture_name: "moonColor.jpeg",
   });
   
@@ -241,9 +233,9 @@ async function main() {
 
 /*  particles.push(init_particle_system(regl, resources, {
     size: 0.01,
-    type: "perlin",
+    type: "particle",
     position: asteroid_actor.position,
-    velocity: [0.2, 0.2, 0.2],
+    velocity: [0.1, 0.1, 0.1],
     system_velocity: [0., 0., 0.],
     count: 5000,
     initial_count: 10,
@@ -254,11 +246,10 @@ async function main() {
     rand_velocity: 0.03,
     start_color: [0.5, 0.5, 0.5, 1.0],
     end_color: [0.9, 0.9, 0.9, 0.5],
-    }));*/
-  
-/*  particles.push(init_particle_system(regl, resources, {
+    }));
+    particles.push(init_particle_system(regl, resources, {
     size: 0.05,
-    type: "perlin",
+    type: "particle",
     position: asteroid_actor.position,
     velocity: [0.1, 0.1, 0.1],
     system_velocity: [0., 0., 0.],
@@ -269,26 +260,29 @@ async function main() {
     lifetime: 1.5,
     rand_pos: 0.05,
     rand_velocity: 0.03,
-    start_color: [0.2, 0.2, 0.2, 1.0],
+    start_color: [0.5, 0.5, 0.5, 1.0],
     end_color: [0.9, 0.9, 0.9, 0.5],
     }));*/
 
-  particles.push(init_particle_system(regl, resources, {
+
+  // Fire tail
+  const fire_tail = {
     size: 0.05,
-    type: "perlin",
+    type: "fbm_zoomed",
     position: asteroid_actor.position,
     velocity: [0.2, 0.2, 0.2],
     system_velocity: [0., 0., 0.],
-    count: 10000,
+    count: 2000,
     initial_count: 10,
     frequency: 0.0001,
     spawn_count: 50,
-    lifetime: 1.5,
-    rand_pos: 0.11,
+    lifetime: .5,
+    rand_pos: 0.1,
     rand_velocity: 0.05,
-    start_color: [1., 0., 0., 1.0],
+    start_color: [1., 0.4, 0., 1.0],
     end_color: [1., 1., 0., 0.5],
-  }));
+  };
+  particles.push(init_particle_system(regl, resources, fire_tail));
   
 
 	/*

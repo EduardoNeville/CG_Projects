@@ -42,6 +42,7 @@ export function init_asteroid(regl, resources, options) {
 
   	calculate_model_matrix({sim_time}) {
       this.age += sim_time - this.last_sim_time;
+      this.last_sim_time = sim_time;
        
 			// Fly towards target point
       const dir = vec3.normalize([0,0,0], vec3.subtract([0,0,0], this.end_point, this.start_point));
