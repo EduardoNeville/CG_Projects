@@ -132,8 +132,8 @@ export function init_particle(regl, resources, options) {
 
       const position = vec3.add([0,0,0], vec3.add([0,0,0], this.position, this.offset), vec3.scale([0,0,0], this.velocity, this.age));
 
-//      const new_normal = vec3.normalize([0., 0., 0.], vec3.subtract([0.,0.,0.], camera_position, position));
-      const new_normal = vec3.normalize([0., 0., 0.], camera_position);
+      const new_normal = vec3.normalize([0., 0., 0.], vec3.subtract([0.,0.,0.], camera_position, position));
+//      const new_normal = vec3.normalize([0., 0., 0.], camera_position);
       const normal_xy = vec3.normalize([0.,0.,0.], vec3.subtract([0.,0.,0.], new_normal, vec3.scale([0.,0.,0.], [0.,0.,1.], vec3.dot([0.,0.,1.], new_normal))));
       let angle = Math.acos(vec3.dot([0., 1., 0.,], normal_xy));
       if (normal_xy[0] > 0) {

@@ -5,6 +5,8 @@ export function init_particle_system(regl, resources, options) {
   class ParticleSystemActor {
     constructor(options, regl, resources) {
       const {size, type, position, velocity, system_velocity, initial_count, count, frequency, spawn_count, lifetime, custom_shader} = options;
+      this.enabled = false;
+      
       this.size = size;
       this.type = type;
       this.position = position;

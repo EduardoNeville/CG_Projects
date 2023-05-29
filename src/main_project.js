@@ -125,6 +125,7 @@ async function main() {
 	let cam_distance_factor = 1.
 
 	let cam_target = [0, 0, 0]
+  let cam_follow = false
 
 	function update_cam_transform() {
 		/* #TODO PG1.0 Copy camera controls
@@ -149,7 +150,7 @@ async function main() {
     // Store the combined transform in mat_turntable
     const M_rot_z = mat4.fromZRotation(mat4.create(), cam_angle_z)
     const M_rot_y = mat4.fromYRotation(mat4.create(), cam_angle_y)
-    const M_trans = mat4.fromTranslation(mat4.create(), cam_target)
+    const M_trans = mat4.fromTranslation(mat4.create(), vec3.negate([0,0,0], cam_target))
     //frame_info.mat_turntable = A * B * ...
     mat4_matmul_many(mat_turntable, look_at,M_rot_y, M_rot_z, M_trans)
   }
@@ -163,12 +164,16 @@ async function main() {
 	window.addEventListener('mousemove', (event) => {
 		// if left or middle button is pressed
 		if (event.buttons & 1 || event.buttons & 4) {
-			if (event.shiftKey) {
+      if (event.shiftKey) {
+			  if (cam_follow) {
+          cam_target = vec3.clone(cam_target);
+          cam_follow = false;
+        }
 				const r = mat2.fromRotation(mat2.create(), -cam_angle_z)
 				const offset = vec2.transformMat2([0, 0], [event.movementY, event.movementX], r)
 				vec2.scale(offset, offset, -0.01)
-				cam_target[0] += offset[0]
-				cam_target[1] += offset[1]
+				cam_target[0] -= offset[0]
+				cam_target[1] -= offset[1]
 			} else {
 				cam_angle_z += event.movementX*0.005
 				cam_angle_y += -event.movementY*0.005
@@ -210,14 +215,14 @@ async function main() {
 
 	const terrain_actor = init_terrain(regl, resources, texture_fbm.get_buffer())
   const asteroid_actor = init_asteroid(regl, resources, {
-    size: 0.1,
-    start_point: [.5, .5, .5],
-    end_point: [0., 0., 0.],
-    speed: 0.1,
+    size: 0.01,
+    start_point: [.3, .3, .5],
+    end_point: [0., 0., -.03],
+    speed: 0.01,
     texture_name: "moonColor.jpeg",
   });
   
-  const particles = []
+  const particles = {};
   
 /*  particles.push(init_particle_system(regl, resources, {
     size: 0.01,
@@ -229,60 +234,45 @@ async function main() {
     frequency: 0.01,
     lifetime: 3,
     rand_scale: 0.03,
-  }));*/
-
-/*  particles.push(init_particle_system(regl, resources, {
-    size: 0.01,
-    type: "particle",
-    position: asteroid_actor.position,
-    velocity: [0.1, 0.1, 0.1],
-    system_velocity: [0., 0., 0.],
-    count: 5000,
-    initial_count: 10,
-    frequency: 0.001,
-    spawn_count: 10,
-    lifetime: 1.5,
-    rand_pos: 0.1,
-    rand_velocity: 0.03,
-    start_color: [0.5, 0.5, 0.5, 1.0],
-    end_color: [0.9, 0.9, 0.9, 0.5],
-    }));
-    particles.push(init_particle_system(regl, resources, {
-    size: 0.05,
-    type: "particle",
-    position: asteroid_actor.position,
-    velocity: [0.1, 0.1, 0.1],
-    system_velocity: [0., 0., 0.],
-    count: 5000,
-    initial_count: 10,
-    frequency: 0.001,
-    spawn_count: 5,
-    lifetime: 1.5,
-    rand_pos: 0.05,
-    rand_velocity: 0.03,
-    start_color: [0.5, 0.5, 0.5, 1.0],
-    end_color: [0.9, 0.9, 0.9, 0.5],
     }));*/
+
+  const smoke_tail = {
+    size: 0.005,
+    type: "fbm",
+    position: asteroid_actor.position,
+    velocity: [0.1, 0.1, 0.17],
+    system_velocity: [0., 0., 0.],
+    count: 5000,
+    initial_count: 10,
+    frequency: 0.001,
+    spawn_count: 50,
+    lifetime: 1.5,
+    rand_pos: 0.005,
+    rand_velocity: 0.006,
+    start_color: [0.3, 0.3, 0.3, 1.0],
+    end_color: [0.7, 0.7, 0.7, 0.5],
+  };
+  particles['smoke'] = init_particle_system(regl, resources, smoke_tail);
 
 
   // Fire tail
   const fire_tail = {
-    size: 0.05,
+    size: 0.005,
     type: "fbm_zoomed",
     position: asteroid_actor.position,
-    velocity: [0.2, 0.2, 0.2],
+    velocity: [0.02, 0.02, 0.034],
     system_velocity: [0., 0., 0.],
-    count: 2000,
+    count: 5000,
     initial_count: 10,
     frequency: 0.0001,
     spawn_count: 50,
-    lifetime: .5,
-    rand_pos: 0.1,
-    rand_velocity: 0.05,
+    lifetime: 2.,
+    rand_pos: 0.01,
+    rand_velocity: 0.005,
     start_color: [1., 0.4, 0., 1.0],
     end_color: [1., 1., 0., 0.5],
   };
-  particles.push(init_particle_system(regl, resources, fire_tail));
+  particles['fire'] = init_particle_system(regl, resources, fire_tail);
   
 
 	/*
@@ -302,8 +292,28 @@ async function main() {
 		update_cam_transform()
 		update_needed = true
 	}
-	activate_preset_view()
 	register_button_with_hotkey('btn-preset-view', '1', activate_preset_view)
+
+  function activate_follow_asteroid() {
+    cam_angle_z = -1.855;
+    cam_angle_y = -0.51;
+    cam_distance_factor = 0.1;
+
+    cam_target = asteroid_actor.position;
+    cam_follow = true;
+  }
+  activate_follow_asteroid();
+  register_button_with_hotkey('btn-follow-asteroid', '2', activate_follow_asteroid);
+
+  function toggle_fire() {
+    particles['fire'].enabled = !particles['fire'].enabled;
+  }
+  register_button_with_hotkey('btn-toggle-fire', 'f', toggle_fire);
+
+  function toggle_smoke() {
+    particles['smoke'].enabled = !particles['smoke'].enabled;
+  }
+  register_button_with_hotkey('btn-toggle-smoke', 's', toggle_smoke);
 
   let is_paused = false;
 	let sim_time = 0;
@@ -357,17 +367,25 @@ async function main() {
       camera_position:     camera_position,
 		}
     
-		// Set the whole image to black
+    asteroid_actor.calculate_model_matrix(scene_info);
+
+    if (cam_follow) {
+      update_cam_transform();
+    }
+
+    // Set the whole image to black
 		regl.clear({color: [0.9, 0.9, 1., 1]})
     
 		terrain_actor.draw(scene_info);
 
-    asteroid_actor.calculate_model_matrix(scene_info);
     asteroid_actor.draw(scene_info);
     
-    for (const particle of particles) {
-      particle.calculate_model_matrix(scene_info)
-      particle.draw(scene_info)
+    for (const name in particles) {
+      const system = particles[name];
+      if (system.enabled) {
+        system.calculate_model_matrix(scene_info);
+        system.draw(scene_info);
+      }
 		}
 
     // 		debug_text.textContent = `
