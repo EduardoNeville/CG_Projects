@@ -258,7 +258,7 @@ async function main() {
   // Fire tail
   const fire_tail = {
     size: 0.005,
-    type: "fbm_zoomed",
+    type: "turbulence",
     position: asteroid_actor.position,
     velocity: [0.02, 0.02, 0.034],
     system_velocity: [0., 0., 0.],
