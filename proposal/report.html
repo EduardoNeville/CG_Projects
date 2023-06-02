@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Asteriod Impact</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="icg_report.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Asteriod entering the sphere</h1>
+</header>
+<h2 id="abstract">Abstract</h2>
+<p>In our project we modelled a asteroid entering the sphere and heading towards a landscape.</p>
+<h2 id="technical-report">Technical approach</h1>
+<h4 id="creating-asteroid">Creating Asteroid</h4>
+<p>For this part of our project the following page was a big inspiration for us: <a href="https://webgl2fundamentals.org/webgl/lessons/webgl-qna-apply-a-displacement-map-and-specular-map.html">https://webgl2fundamentals.org/webgl/lessons/webgl-qna-apply-a-displacement-map-and-specular-map.html</a>. 
+  To create the asteroid we used Bump Mapping and the calculationn of the Pertubed normal in the fragment shader. 
+  Using the normal mapping in the specular component of the Phong-lightning model we add textures via 
+  shading to our asteroid. Since this is just emulating rising and lowering in the surface, we need to add
+  geometry. Therefore we use Displacement Maps in the vertex shader. First we have to set the gl_Position variable
+  which is a variable holding the position of a vertex is clip space(4 dimensional). Defining a 4 dimensional vector "displace" by setting it 
+  to the attributed vector "aPosition", we update the three first components by adding the solution of the displacement. That means we add the 
+  the product of the displacement factor with the texture value of the displacement map and the attribute "aNormal". Transforming this vector 
+  by the Model-View-Projection-Matrix we get the gl_position vector.
+  Then we calculate the vertex postions in world coordinates by multiplying by related matrices.
+</p>
+<h4 id="creating-terrain">Creating Terrain</h4>
+<p>To create the terrain we used the procedual terrain we build in Exercise PG1</p>
+<h4 id="creating-fire-smoke">Creating fire and smoke coming from asteroid</h4>
+<p>To create fire and smoke we used Exercise PG1 as inspiration. We use the introduced cloud texture in the particle default fagment shader.
+  First we use the glsl-function texture2D to find out the texel from the uniform sampler "noise_tex". Multiplying this solution with the 
+  gaussian distance we get a value which we need to calculate the color discard value. In particular: If the product of the mentioned value and the
+  ambient component of the uniform color (let's all this product "amb") is less then 0.5, we discard. Otherwise we set gl_FragColor to color.rgb and "amb".
+  Forthe fire we implemented the particle glow fragment shader to addapt the 4th component of the gl_FragColor with the gaussian distance as long it is positive.
+</p>
+<video width="600" height="400" muted controls autoplay>
+  <source src="\proposal\final_video_webgl_full_recording.mp4" type="video/mp4">
+</video>
+</body>
+</html>
