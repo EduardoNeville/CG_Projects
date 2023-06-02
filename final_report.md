@@ -1,5 +1,5 @@
 ---
-title: Asteriod Impact
+title: Asteroid Impact
 ---
 
 ![Asteroid](images/asteroid_falling1.png)
@@ -110,6 +110,10 @@ trial and error.
 </div>
 
 # Contributions
+
+Elias Boschung: 33%  
+* Particle and ParticleSystem actors and their configuration  
+* Movement of the asteroid
 
 # Resources
 

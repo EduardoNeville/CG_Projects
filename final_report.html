@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>Asteriod Impact</title>
+  <title>Asteroid Impact</title>
   <style>
     code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
@@ -17,7 +17,7 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">Asteriod Impact</h1>
+<h1 class="title">Asteroid Impact</h1>
 </header>
 <figure>
 <img src="images/asteroid_falling1.png" alt="" /><figcaption>Asteroid</figcaption>
@@ -54,46 +54,11 @@ ICG Project: Asteroid impact ⁙⁙ docs: <a href="https://github.com/regl-proje
 </p>
 <pre id="debug-text"></pre>
 </div>
-<script>document.dispatchEvent(new Event('keybress', {'keyCode': 'p'}))</script>
 </div>
-<h1 id="milestone-report">Milestone report</h1>
-<p>We have almost finished the core goals (Drawing billboards (a surface always facing the camera)<br />
-Shader of fire / smoke / cloud, based on noise (this shader is applied to the billboards) are done).<br />
-For next week we plan to complete the core tasks and decide on which extension we will work on.</p>
-<h1 id="goals-and-deliverables">Goals and Deliverables</h1>
-<figure>
-<img src="images/asteroid_impact1.jpg" alt="" /><figcaption>Impact</figcaption>
-</figure>
-<ol type="1">
-<li>Create the asteroid
-<ul>
-<li>(BASE): <br> Displacement Map: Asteroids aren’t round! We will need to make it more realistic using this technique. <br> Textures: Adding different textures depending on the material being used.</li>
-<li>(EXTENSION) <br> Desintegration upon entering the atmosphere: Making it lose mass as it enters the atmosphere</li>
-</ul></li>
-<li>Asteroid particle effects
-<ul>
-<li>(BASE) <br> Fire effects: Using particle effects to animating the asteroid <br> Smoke effects: Giving the asteroid a tail of smoke as it plummits.</li>
-</ul></li>
-<li>Terrain where asteroid lands
-<ul>
-<li>(BASE) <br> Land and water: Generating the terrain of the plannet the asteroid might land in.</li>
-<li>(EXTENSION) <br> Clouds: Adding aesthetic objects to make the scene prettier <br> Trees: Making the terrain have trees and it’s respective relation with the asteroid impact. <br> Impact: Changing the solid terrain so that the asteroids impact will become more realistic.</li>
-</ul></li>
-<li>Physics of entering the atmosphere
-<ul>
-<li>Equations that make the asteroid enter the atmosphere</li>
-</ul></li>
-</ol>
-<h1 id="schedule">Schedule</h1>
-<p>During the first few weeks we’ll work on the base of our project.</p>
-<p>This will entail us creating the asteroid with a displacement map on the texture.</p>
-<p>Adding to it the necesarry fire and smoke particle effects for an added layer of realism.</p>
-<p>We’ll also generate a terrain on which the asteroid will impact allong with the gravitational equations that will direct it.</p>
-<p>We’ll also create a water masses to simulate the asteroid impact on water.</p>
-<p>The following weeks we’ll work on the extensions and added details to the project.</p>
-<p>Such as making part of the asteriod be able to disintegrate as it enteres the atmosphere or detach becoming in themselves new asteroids.</p>
-<p>Adding cosmetic effects such as clouds and trees are also part of our idea</p>
-<p>In addition, we’ll try to remodel the terrain such that on impact the asteroid is able to create a crater in the ground.</p>
+<h1 id="contributions">Contributions</h1>
+<p>Elias Boschung: 33%<br />
+* Particle and ParticleSystem actors and their configuration<br />
+* Movement of the asteroid</p>
 <h1 id="resources">Resources</h1>
 <p>Particle system:<br />
 - <a href="https://nullprogram.com/blog/2014/06/29/">https://nullprogram.com/blog/2014/06/29/</a><br />
