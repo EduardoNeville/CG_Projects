@@ -24,7 +24,7 @@ invest much time, the terrain mostly staying the same as in that exercise.
 ## Asteroid
 
 For this part of our project the following page was a big inspiration for us: [https://webgl2fundamentals.org/webgl/lessons/webgl-qna-apply-a-displacement-map-and-specular-map.html](https://webgl2fundamentals.org/webgl/lessons/webgl-qna-apply-a-displacement-map-and-specular-map.html).
-To create the asteroid we used Bump Mapping and the calculationn of the Pertubed normal in the fragment shader. 
+To create the asteroid we used Bump Mapping and the calculation of the Pertubed normal in the fragment shader. 
 Using the normal mapping in the specular component of the Phong-lightning model we add textures via 
 shading to our asteroid. Since this is just emulating rising and lowering in the surface, we need to add
 geometry. Therefore we use Displacement Maps in the vertex shader. First we have to set the gl_Position variable
@@ -111,9 +111,18 @@ trial and error.
 
 # Contributions
 
-Elias Boschung: 33%  
+Elias Boschung: 35%  
 * Particle and ParticleSystem actors and their configuration  
 * Movement of the asteroid
+
+Eduardo Neville: 35%
+* Asteroid texture and color
+* Bump Mapping, Pertubed Normal and Displacement Map
+
+Natalja Sagel: 30%
+* Terrain
+* Report 
+* Video
 
 # Resources
 

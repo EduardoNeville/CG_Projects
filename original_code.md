@@ -249,3 +249,149 @@ if (color.a * alpha_res < 0.5) {
 
 gl_FragColor = vec4(color.rgb, color.a * alpha_res);
 ```
+
+# Terrain fragment shader
+
+```c
+vec3 material_color = terrain_color_water;
+float shininess = 30.0;
+if (height > terrain_water_level) {
+    material_color = mix(terrain_color_grass, terrain_color_mountain,   (height - terrain_water_level)*2.0);
+    shininess = 2.0;
+}
+
+vec3 color = material_color * ambient;
+vec3 n_v2f_normal = normalize(v2f_normal);
+vec3 n_v2f_dir_to_light = normalize(v2f_dir_to_light);
+vec3 n_v2f_dir_from_view = normalize(v2f_dir_from_view);
+float diffuse = dot(n_v2f_normal, n_v2f_dir_to_light);
+if (diffuse > 0.) {
+    vec3 n_half_vec = normalize(-n_v2f_dir_from_view + n_v2f_dir_to_light);
+    float diff_spec = diffuse;
+    if (dot(n_v2f_normal, n_half_vec) > 0.) {
+            diff_spec += pow(dot(n_half_vec, n_v2f_normal), shininess);
+    }
+      color += light_color * material_color * diff_spec;
+}
+
+gl_FragColor = vec4(color, 1.);
+```
+
+# Terrain vertex shader
+
+```c
+vec4 vertex_view_pos = mat_model_view * position_v4;
+v2f_dir_from_view = vec3(vertex_view_pos);
+v2f_dir_to_light = vec3(light_position - vertex_view_pos);
+v2f_normal = mat_normals * normal;
+
+gl_Position = mat_mvp * position_v4;
+```
+
+# Asteroid vertex shader
+
+```c
+gl_Position = uMvpMatrix * displace;
+vPosition = vec3(uModelMatrix * aPosition);
+vNormal = normalize(mat3(uNormalMatrix) * aNormal);
+vTexCoord = aTexCoord;
+```
+
+# Terrain built mesh
+
+```js
+vertices[idx] = [gx/grid_width-0.5, gy/grid_height-0.5, Math.max(WATER_LEVEL, elevation)]
+if (elevation < WATER_LEVEL) {
+      normals[idx] = [0, 0, 1]
+}
+
+for(let gy = 0; gy < grid_height - 1; gy++) {
+  for(let gx = 0; gx < grid_width - 1; gx++) {
+      const a = xy_to_v_index(gx, gy)
+      const b = xy_to_v_index(gx+1, gy)
+      const c = xy_to_v_index(gx, gy+1)
+      const d = xy_to_v_index(gx+1, gy+1)
+
+      faces.push([a, b, c])
+      faces.push([b, d, c])
+  }
+}
+```
+
+# Noise fragment shader
+
+```c
+float perlin_noise_1d(float x){
+  float c0 = floor(x);
+  float c1 = c0 + 1.0;
+
+  vec2 g0 = gradients(hash_func(vec2(c0, 0.0)));
+  vec2 g1 = gradients(hash_func(vec2(c1, 0.0)));
+
+  float v0 = g0.x * (x - c0);
+  float v1 = g1.x * (x - c1);
+
+  float t = blending_weight_poly(x - c0);
+
+  float v = mix(v0, v1, t);
+
+  return v;
+}
+
+float perlin_fbm_1d(float x) {
+  float fbm_1d=0.;
+  float ampl_multiplier_pow = 1.;
+  float freq_multiplier_pow = 1.;
+  for(int i=0; i<num_octaves;i++){
+    fbm_1d += ampl_multiplier_pow*perlin_noise_1d(x*freq_multiplier_pow);
+    ampl_multiplier_pow *= ampl_multiplier;
+    freq_multiplier_pow *= freq_multiplier;
+  }
+  return fbm_1d;
+}
+
+float perlin_noise(vec2 point) {
+  
+  // Find the two grid points that surround x
+  float cwest = floor(point.x);
+  float ceast = cwest + 1.0;
+  float csouth = floor(point.y);
+  float cnorth = csouth + 1.0;
+
+  // Look up the gradients at the grid points
+  vec2 g00 = gradients(hash_func(vec2(cwest, csouth)));
+  vec2 g01 = gradients(hash_func(vec2(ceast, csouth)));
+  vec2 g10 = gradients(hash_func(vec2(cwest, cnorth)));
+  vec2 g11 = gradients(hash_func(vec2(ceast, cnorth)));
+
+  // Calculate the contributiotns of each corner
+  float s = dot(g00 , vec2(point.x - cwest, point.y -csouth));  // vec2 is a 
+  float t = dot(g01 , vec2(point.x - ceast, point.y - csouth)); // vec2 is b 
+  float u = dot(g10 , vec2(point.x - cwest, point.y - cnorth)); // vec2 is c
+  float v = dot(g11 , vec2(point.x - ceast, point.y - cnorth)); // vec2 is d
+
+  // Interpolate the contributions
+  float f_x = blending_weight_poly(point.x - cwest);
+  float f_y = blending_weight_poly(point.y - csouth);
+
+  float st = mix(s, t, f_x);
+  float uv = mix(u, v, f_x);
+  float noise = mix(st, uv, f_y);
+
+
+	return noise;
+}
+
+vec3 tex_map(vec2 point) {
+
+  float alpha = perlin_fbm(point);
+  vec3 color;
+  if(alpha < terrain_water_level){
+          color = terrain_color_water;
+  }else {
+          float alpha = (alpha - terrain_water_level) / (1.0 - terrain_water_level);
+          color = mix(terrain_color_grass, terrain_color_mountain, alpha);
+  }
+  return color;
+}
+```
