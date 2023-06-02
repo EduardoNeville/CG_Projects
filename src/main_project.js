@@ -25,6 +25,7 @@ async function main() {
 	const regl = createREGL({ // the canvas to use
 		profile: true, // if we want to measure the size of buffers/textures in memory
 		extensions: ['oes_texture_float'], // enable float textures
+    container: document.getElementById('demo-container'), // Set container
 	})
 
 	// The <canvas> (HTML element for drawing graphics) was created by REGL, lets take a handle to it.
@@ -96,6 +97,7 @@ async function main() {
 
   
   resources[`noise/perlin`] = load_texture(regl, 'src/noise/perlin.png');
+  resources[`noise/smoke`] = load_texture(regl, 'src/noise/smoke.png');
   resources[`noise/fbm`] = load_texture(regl, 'src/noise/fbm.png');
   resources[`noise/fbm_zoomed`] = load_texture(regl, 'src/noise/fbm_zoomed.png');
   resources[`noise/turbulence`] = load_texture(regl, 'src/noise/turbulence.png');
@@ -161,7 +163,7 @@ async function main() {
 	canvas_elem.addEventListener('mousedown', (event) => { event.preventDefault() })
 
 	// Rotate camera position by dragging with the mouse
-	window.addEventListener('mousemove', (event) => {
+	canvas_elem.addEventListener('mousemove', (event) => {
 		// if left or middle button is pressed
 		if (event.buttons & 1 || event.buttons & 4) {
       if (event.shiftKey) {
@@ -184,7 +186,7 @@ async function main() {
 
 	})
 
-	window.addEventListener('wheel', (event) => {
+	canvas_elem.addEventListener('wheel', (event) => {
 		// scroll wheel to zoom in or out
 		const factor_mul_base = 1.08
 		const factor_mul = (event.deltaY > 0) ? factor_mul_base : 1./factor_mul_base
@@ -315,7 +317,7 @@ async function main() {
   }
   register_button_with_hotkey('btn-toggle-smoke', 's', toggle_smoke);
 
-  let is_paused = false;
+  let is_paused = true;
 	let sim_time = 0;
   let delta = 0;
 	let prev_regl_time = 0;

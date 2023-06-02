@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Asteriod Impact</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+  </style>
+  <link rel="stylesheet" href="icg_report.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Asteriod Impact</h1>
+</header>
+<figure>
+<img src="images/asteroid_falling1.png" alt="" /><figcaption>Asteroid</figcaption>
+</figure>
+<h1 id="abstract">Abstract</h1>
+<p>The project is an animation of an asteroid falling through the atmosphere towards the surface of a planet. The animation includes the asteroid falling, with the option to enable/disable different effects that surround the asteroid during it’s fall. The available effects are a fire trail enveloping the asteroid and a trail of smoke following the asteroid. The two effects can be combined, and the animation can be freely paused at any moment. The camera can be moved on the x-y-plane parallel to the ground, zoomed and rotated, but it can also be set to automatically follow the asteroid.</p>
+<h1 id="technical-approach">Technical approach</h1>
+<h2 id="terrain">Terrain</h2>
+<p>We based our project on the WebGL framework provided in the exercises, more specifically the framework from the last exercise, including the terrain. We played around a bit with the size of the terrain, but we didn’t invest much time, the terrain mostly staying the same as in that exercise.</p>
+<h2 id="asteroid">Asteroid</h2>
+<p>For this part of our project the following page was a big inspiration for us: <a href="https://webgl2fundamentals.org/webgl/lessons/webgl-qna-apply-a-displacement-map-and-specular-map.html">https://webgl2fundamentals.org/webgl/lessons/webgl-qna-apply-a-displacement-map-and-specular-map.html</a>. To create the asteroid we used Bump Mapping and the calculationn of the Pertubed normal in the fragment shader. Using the normal mapping in the specular component of the Phong-lightning model we add textures via shading to our asteroid. Since this is just emulating rising and lowering in the surface, we need to add geometry. Therefore we use Displacement Maps in the vertex shader. First we have to set the gl_Position variable which is a variable holding the position of a vertex is clip space(4 dimensional). Defining a 4 dimensional vector “displace” by setting it to the attributed vector “aPosition”, we update the three first components by adding the solution of the displacement. That means we add the the product of the displacement factor with the texture value of the displacement map and the attribute “aNormal”. Transforming this vector by the Model-View-Projection-Matrix we get the gl_position vector. Then we calculate the vertex postions in world coordinates by multiplying by related matrices.</p>
+<p>For the asteroid movement we got mostly inspired from the exercise with the planetary system. We however modified the planet simulation so that the asteroid falls towards the terrain, by implementing a movement pattern that just goes from point A to point B and then setting up the points for the asteroid so it falls in a nice angle towards the terrain.</p>
+<h2 id="particle-effects">Particle effects</h2>
+<p>For the particle systems, we got inspired by the provided example of last year’s homework about billboards. So we first implemented an actor for a single particle, which is always oriented towards the camera and uses a simple shader showing a simple glow texture. We then later expanded this, such that the shader gets the alpha based on a noise texture, which can be specified at creation of the particle actor. The particles can also be provided a color, which is applied to the billboard by the shader. To have correctly shaded particles, we enabled the depth buffer for the particle rendering, and added a discard instruction in the shader of the particles, to discard the fragment if the resulting alpha value given by the noise texture and the provided color is below a certain threshold. In this way the particles are properly shown behind each other, and the particles behind the asteroid are not visible thanks to the depth buffer.</p>
+<p>On top of the particle actor we added a particle emitter actor, which handles the emission of a great number of particles and which can be customized by providing different parameters at creation. The parameters include position, velocity of each particle and velocity of the system. This allows a very good customization of the emission, with also the possibility of giving the position of another actor as position, and the system will follow that other actor.<br />
+There are also options to control the amount of particles and their spawning, by giving a maximum amount of particles for the system, the number of particles that will be initially spawned, and the frequency of the spawning of the particles. Also there is the ability to provide a lifetime that will apply to each particle spawned by the system.<br />
+To make sure the particles spawned by the system have some randomness in them and don’t all move the same way there are two parameters to control the randomness of the position and the velocity. These two parameters control the scale of the random vector that’s added to the newly spawned particle’s position or velocity respectively.<br />
+Finally the noise texture for each particle can be specified by the name, the size of each particle can be specified and a start and an end color, between which each particle will interpolate it’s color based on it’s lifetime.</p>
+<h3 id="problems-encountered">Problems encountered</h3>
+<p>We at first struggeled a bit with the calculation of the matrix to make the billboard always face the camera, but after going back to think about how we needed to rotate them we managed to get them correctly.<br />
+Also getting the different parameters right to have a somewhat nice looking effects took quite some time and repeated trial and error.</p>
+<h1 id="results">Results</h1>
+<h2 id="video">Video</h2>
+<p><video src="images/final_video.mp4" style="width:90.0%" controls=""><a href="images/final_video.mp4">Video</a></video></p>
+<h2 id="live-demo">Live demo</h2>
+<div id="demo-container">
+<script src="src/main_project.js" type="module"></script>
+<div id="debug-overlay">
+<p>
+ICG Project: Asteroid impact ⁙⁙ docs: <a href="https://github.com/regl-project/regl/blob/gh-pages/API.md">regl</a>, <a href="http://glmatrix.net/docs/">gl-matrix</a>, <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript">MDN</a> <br/> ⁙⁙ mouse: drag to rotate, shift+drag to move ⁙⁙ scroll to zoom ⁙⁙ show/hide <strong class="keyboard">z</strong> ⁙⁙ pause/unpause <strong class="keyboard">p</strong>
+</p>
+<p id="view-options">
+<span id="btn-preset-view" class="button">Preset view <strong class="keyboard">1</strong></span> <span id="btn-follow-asteroid" class="button">Follow asteroid <strong class="keyboard">2</strong></span> <span id="btn-toggle-fire" class="button">Toggle fire <strong class="keyboard">f</strong></span> <span id="btn-toggle-smoke" class="button">Toggle smoke <strong class="keyboard">s</strong></span>
+</p>
+<pre id="debug-text"></pre>
+</div>
+<script>document.dispatchEvent(new Event('keybress', {'keyCode': 'p'}))</script>
+</div>
+<h1 id="milestone-report">Milestone report</h1>
+<p>We have almost finished the core goals (Drawing billboards (a surface always facing the camera)<br />
+Shader of fire / smoke / cloud, based on noise (this shader is applied to the billboards) are done).<br />
+For next week we plan to complete the core tasks and decide on which extension we will work on.</p>
+<h1 id="goals-and-deliverables">Goals and Deliverables</h1>
+<figure>
+<img src="images/asteroid_impact1.jpg" alt="" /><figcaption>Impact</figcaption>
+</figure>
+<ol type="1">
+<li>Create the asteroid
+<ul>
+<li>(BASE): <br> Displacement Map: Asteroids aren’t round! We will need to make it more realistic using this technique. <br> Textures: Adding different textures depending on the material being used.</li>
+<li>(EXTENSION) <br> Desintegration upon entering the atmosphere: Making it lose mass as it enters the atmosphere</li>
+</ul></li>
+<li>Asteroid particle effects
+<ul>
+<li>(BASE) <br> Fire effects: Using particle effects to animating the asteroid <br> Smoke effects: Giving the asteroid a tail of smoke as it plummits.</li>
+</ul></li>
+<li>Terrain where asteroid lands
+<ul>
+<li>(BASE) <br> Land and water: Generating the terrain of the plannet the asteroid might land in.</li>
+<li>(EXTENSION) <br> Clouds: Adding aesthetic objects to make the scene prettier <br> Trees: Making the terrain have trees and it’s respective relation with the asteroid impact. <br> Impact: Changing the solid terrain so that the asteroids impact will become more realistic.</li>
+</ul></li>
+<li>Physics of entering the atmosphere
+<ul>
+<li>Equations that make the asteroid enter the atmosphere</li>
+</ul></li>
+</ol>
+<h1 id="schedule">Schedule</h1>
+<p>During the first few weeks we’ll work on the base of our project.</p>
+<p>This will entail us creating the asteroid with a displacement map on the texture.</p>
+<p>Adding to it the necesarry fire and smoke particle effects for an added layer of realism.</p>
+<p>We’ll also generate a terrain on which the asteroid will impact allong with the gravitational equations that will direct it.</p>
+<p>We’ll also create a water masses to simulate the asteroid impact on water.</p>
+<p>The following weeks we’ll work on the extensions and added details to the project.</p>
+<p>Such as making part of the asteriod be able to disintegrate as it enteres the atmosphere or detach becoming in themselves new asteroids.</p>
+<p>Adding cosmetic effects such as clouds and trees are also part of our idea</p>
+<p>In addition, we’ll try to remodel the terrain such that on impact the asteroid is able to create a crater in the ground.</p>
+<h1 id="resources">Resources</h1>
+<p>Particle system:<br />
+- <a href="https://nullprogram.com/blog/2014/06/29/">https://nullprogram.com/blog/2014/06/29/</a><br />
+- <a href="https://webglfundamentals.org/webgl/lessons/webgl-qna-efficient-particle-system-in-javascript---webgl-.html">https://webglfundamentals.org/webgl/lessons/webgl-qna-efficient-particle-system-in-javascript—webgl-.html</a></p>
+<p>Procedural generation:<br />
+- Texturing &amp; Modeling: A Procedural Approach</p>
+<p>Water 2D:<br />
+- <a href="https://gamedev.stackexchange.com/questions/44547/how-do-i-create-2d-water-with-dynamic-waves">https://gamedev.stackexchange.com/questions/44547/how-do-i-create-2d-water-with-dynamic-waves</a></p>
+</body>
+</html>
